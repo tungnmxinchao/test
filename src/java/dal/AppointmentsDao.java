@@ -20,6 +20,88 @@ import model.Users;
  */
 public class AppointmentsDao extends DBContext {
 
+    public boolean updateAppointment(Appointments a) {
+        if (a == null || a.getAppointmentId() <= 0) {
+            return false;
+        }
+
+        String sql = """
+        UPDATE dbo.Appointments
+        SET 
+            PatientID = ?, 
+            DoctorID = ?, 
+            ServiceID = ?, 
+            AppointmentDate = ?, 
+            StartTime = ?, 
+            EndTime = ?, 
+            Status = ?, 
+            Notes = ?, 
+            UpdatedDate = GETDATE()
+        WHERE AppointmentID = ?
+    """;
+
+        try (Connection conn = new DBContext().connection; PreparedStatement ps = conn.prepareStatement(sql)) {
+            int i = 1;
+
+            // Gán các giá trị cho cột
+            if (a.getPatientId() != null) {
+                ps.setInt(i++, a.getPatientId().getPatientID());
+            } else {
+                ps.setNull(i++, Types.INTEGER);
+            }
+
+            if (a.getDoctorId() != null) {
+                ps.setInt(i++, a.getDoctorId().getDoctorID());
+            } else {
+                ps.setNull(i++, Types.INTEGER);
+            }
+
+            if (a.getServiceId() != null) {
+                ps.setInt(i++, a.getServiceId().getServiceId());
+            } else {
+                ps.setNull(i++, Types.INTEGER);
+            }
+
+            if (a.getAppointmentDate() != null) {
+                ps.setDate(i++, a.getAppointmentDate());
+            } else {
+                ps.setNull(i++, Types.DATE);
+            }
+
+            if (a.getStartTime() != null) {
+                ps.setTime(i++, a.getStartTime());
+            } else {
+                ps.setNull(i++, Types.TIME);
+            }
+
+            if (a.getEndTime() != null) {
+                ps.setTime(i++, a.getEndTime());
+            } else {
+                ps.setNull(i++, Types.TIME);
+            }
+
+            if (a.getStatus() != null && !a.getStatus().isBlank()) {
+                ps.setString(i++, a.getStatus().trim());
+            } else {
+                ps.setNull(i++, Types.NVARCHAR);
+            }
+
+            if (a.getNotes() != null && !a.getNotes().isBlank()) {
+                ps.setString(i++, a.getNotes());
+            } else {
+                ps.setNull(i++, Types.NVARCHAR);
+            }
+
+            ps.setInt(i++, a.getAppointmentId());
+
+            int affectedRows = ps.executeUpdate();
+            return affectedRows > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     //lay lich hen qua id
     public Appointments getAppointmentsById(int appointmentId) {
         String sql = """
@@ -239,24 +321,26 @@ public class AppointmentsDao extends DBContext {
         try (Connection cn = new DBContext().connection; PreparedStatement ps = cn.prepareStatement(sql)) {
             ps.setInt(1, doctorId);
             ps.setDate(2, appointmentDate);
-            ps.setTime(3, newEndTime);    
-            ps.setTime(4, newStartTime);  
-            ps.setTime(5, newEndTime);     
-            ps.setTime(6, newStartTime);  
-            ps.setTime(7, newStartTime);  
-            ps.setTime(8, newEndTime);    
+            ps.setTime(3, newEndTime);
+            ps.setTime(4, newStartTime);
+            ps.setTime(5, newEndTime);
+            ps.setTime(6, newStartTime);
+            ps.setTime(7, newStartTime);
+            ps.setTime(8, newEndTime);
 
             try (ResultSet rs = ps.executeQuery()) {
                 //co trung lap
                 return rs.next();
             }
         } catch (SQLException e) {
-            return true; 
+            return true;
         }
     }
-     /**
-     * Lấy danh sách lịch sử các cuộc hẹn đã hoàn thành của một bệnh nhân.
-     * Hàm này truy vấn kèm tên bác sĩ và tên dịch vụ để hiển thị.
+
+    /**
+     * Lấy danh sách lịch sử các cuộc hẹn đã hoàn thành của một bệnh nhân. Hàm
+     * này truy vấn kèm tên bác sĩ và tên dịch vụ để hiển thị.
+     *
      * @param patientId ID của bệnh nhân.
      * @return Một List chứa thông tin cơ bản của các lần khám.
      */
@@ -303,7 +387,7 @@ public class AppointmentsDao extends DBContext {
                     doctorUser.setFullName(rs.getString("DoctorName"));
                     doctor.setUserId(doctorUser);
                     appointment.setDoctorId(doctor);
-                    
+
                     history.add(appointment);
                 }
             }
