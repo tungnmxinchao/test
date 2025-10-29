@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
  */
-package controller.BookAppointment.MedicalHistory;
+package controller.MedicalHistory;
 
 import dal.AppointmentsDao;
 import dal.MedicalRecordDao;
