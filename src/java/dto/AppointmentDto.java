@@ -16,10 +16,17 @@ public class AppointmentDto {
     private Integer doctorId;
     private Integer serviceId;
     private Date appointmentDate;
+    private Date appointmentDateFrom;
+    private Date appointmentDateTo;
     private Time startTime;
     private Time endTime;
     private String status;
     private Date createdDate;
+
+    private String patientName;
+    private String phoneNumber;
+    private String doctorName;
+
     private boolean paginationMode = true;
     private boolean sortMode = false;
     private int page = 1;
@@ -28,16 +35,20 @@ public class AppointmentDto {
     public AppointmentDto() {
     }
 
-    public AppointmentDto(Integer patientId, Integer doctorId, Integer serviceId, Date appointmentDate, Time startTime, Time endTime, String status, Date createdDate, boolean sortMode) {
+    public AppointmentDto(Integer patientId, Integer doctorId, Integer serviceId, Date appointmentDate, Date appointmentDateFrom, Date appointmentDateTo, Time startTime, Time endTime, String status, Date createdDate, String patientName, String phoneNumber, String doctorName) {
         this.patientId = patientId;
         this.doctorId = doctorId;
         this.serviceId = serviceId;
         this.appointmentDate = appointmentDate;
+        this.appointmentDateFrom = appointmentDateFrom;
+        this.appointmentDateTo = appointmentDateTo;
         this.startTime = startTime;
         this.endTime = endTime;
         this.status = status;
         this.createdDate = createdDate;
-        this.sortMode = sortMode;
+        this.patientName = patientName;
+        this.phoneNumber = phoneNumber;
+        this.doctorName = doctorName;
     }
 
     public Integer getPatientId() {
@@ -72,6 +83,22 @@ public class AppointmentDto {
         this.appointmentDate = appointmentDate;
     }
 
+    public Date getAppointmentDateFrom() {
+        return appointmentDateFrom;
+    }
+
+    public void setAppointmentDateFrom(Date appointmentDateFrom) {
+        this.appointmentDateFrom = appointmentDateFrom;
+    }
+
+    public Date getAppointmentDateTo() {
+        return appointmentDateTo;
+    }
+
+    public void setAppointmentDateTo(Date appointmentDateTo) {
+        this.appointmentDateTo = appointmentDateTo;
+    }
+
     public Time getStartTime() {
         return startTime;
     }
@@ -104,12 +131,28 @@ public class AppointmentDto {
         this.createdDate = createdDate;
     }
 
-    public boolean isSortMode() {
-        return sortMode;
+    public String getPatientName() {
+        return patientName;
     }
 
-    public void setSortMode(boolean sortMode) {
-        this.sortMode = sortMode;
+    public void setPatientName(String patientName) {
+        this.patientName = patientName;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    public String getDoctorName() {
+        return doctorName;
+    }
+
+    public void setDoctorName(String doctorName) {
+        this.doctorName = doctorName;
     }
 
     public boolean isPaginationMode() {
@@ -118,6 +161,14 @@ public class AppointmentDto {
 
     public void setPaginationMode(boolean paginationMode) {
         this.paginationMode = paginationMode;
+    }
+
+    public boolean isSortMode() {
+        return sortMode;
+    }
+
+    public void setSortMode(boolean sortMode) {
+        this.sortMode = sortMode;
     }
 
     public int getPage() {
@@ -135,5 +186,8 @@ public class AppointmentDto {
     public void setSize(int size) {
         this.size = size;
     }
+    
+    
 
+    
 }

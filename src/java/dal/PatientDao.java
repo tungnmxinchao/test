@@ -5,6 +5,8 @@
 package dal;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 import model.Patients;
 import model.Users;
 
@@ -13,6 +15,46 @@ import model.Users;
  * @author Nguyen Dinh Giap
  */
 public class PatientDao extends DBContext {
+
+    public List<Patients> getAllPatients() {
+        List<Patients> patients = new ArrayList<>();
+        String sql = """
+        SELECT 
+            p.PatientID, p.UserID, p.BloodType, p.Allergies, p.MedicalHistory,
+            p.InsuranceInfo, p.EmergencyContactName, p.EmergencyContactPhone,
+            u.FullName, u.Email, u.PhoneNumber
+        FROM dbo.Patients p
+        JOIN dbo.Users u ON p.UserID = u.UserID
+        ORDER BY p.PatientID
+    """;
+
+        try (Connection conn = new DBContext().connection; PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                Users user = new Users();
+                user.setUserId(rs.getInt("UserID"));
+                user.setFullName(rs.getString("FullName"));
+                user.setEmail(rs.getString("Email"));
+                user.setPhoneNumber(rs.getString("PhoneNumber"));
+
+                Patients patient = new Patients();
+                patient.setPatientID(rs.getInt("PatientID"));
+                patient.setBloodType(rs.getString("BloodType"));
+                patient.setAllergies(rs.getString("Allergies"));
+                patient.setMedicalHistory(rs.getString("MedicalHistory"));
+                patient.setInsuranceInfo(rs.getString("InsuranceInfo"));
+                patient.setEmergencyContactName(rs.getString("EmergencyContactName"));
+                patient.setEmergencyContactPhone(rs.getString("EmergencyContactPhone"));
+                patient.setUserID(user);
+
+                patients.add(patient);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return patients;
+    }
 
     /**
      * Lấy thông tin bệnh nhân dựa trên UserID. Hàm này JOIN với bảng Users để
