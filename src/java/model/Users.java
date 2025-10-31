@@ -22,7 +22,7 @@ public class Users {
     private String gender;
     private String address;
     private String role;
-    private boolean isActive;
+    private Boolean isActive;
     private Date createDate;
 
     public Users() {
