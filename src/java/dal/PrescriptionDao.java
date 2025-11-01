@@ -236,4 +236,67 @@ public class PrescriptionDao {
         p.setDoctorId(doctor);
         return p;
     }
+
+    /**
+     * Thêm 1 đơn thuốc (Prescriptions) và trả về PrescriptionID vừa được tạo
+     */
+    public int insertPrescription(Prescriptions p) {
+        String sql = """
+            INSERT INTO [dbo].[Prescriptions]
+                ([RecordID], [DoctorID], [IssueDate], [Instructions])
+            VALUES (?, ?, GETDATE(), ?)
+        """;
+
+        try (Connection conn = new DBContext().connection; PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            // RecordID
+            ps.setInt(1, p.getRecordId().getRecordId());
+            // DoctorID
+            ps.setInt(2, p.getDoctorId().getDoctorID());
+            // Instructions
+            ps.setString(3, p.getInstructions());
+
+            int affected = ps.executeUpdate();
+            if (affected > 0) {
+                try (ResultSet rs = ps.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        return rs.getInt(1); // PrescriptionID mới
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return -1; // thất bại
+    }
+
+    public int insertPrescriptionDetail(PrescriptionDetails d) {
+        String sql = """
+            INSERT INTO [dbo].[PrescriptionDetails]
+                ([PrescriptionID], [MedicationID], [Dosage], [Quantity], [Duration])
+            VALUES (?, ?, ?, ?, ?)
+        """;
+
+        try (Connection conn = new DBContext().connection; PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            ps.setInt(1, d.getPrescriptionId().getPrescriptionId()); // FK -> Prescriptions
+            ps.setInt(2, d.getMedications().getMedicationId());      // FK -> Medications
+            ps.setString(3, d.getDosage());
+            ps.setInt(4, d.getQuantity());
+            ps.setString(5, d.getDuration());
+
+            int affected = ps.executeUpdate();
+            if (affected > 0) {
+                try (ResultSet rs = ps.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        return rs.getInt(1); // PrescriptionDetailID mới
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
 }

@@ -6,7 +6,6 @@ package controller.CheckIn;
 
 import dal.AppointmentsDao;
 import dal.ScheduleDao;
-import dto.AppointmentDto;
 import dto.ScheduleDto;
 import java.io.IOException;
 import jakarta.servlet.ServletException;
@@ -26,7 +25,7 @@ import model.Schedules;
  *
  * @author TNO
  */
-@WebServlet(name = "CheckInController", urlPatterns = {"/checkIn"})
+@WebServlet(name = "CheckInController", urlPatterns = {"/checkin"})
 public class CheckInController extends HttpServlet {
 
     private final AppointmentsDao appointmentsDao = new AppointmentsDao();
@@ -35,32 +34,6 @@ public class CheckInController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
-        // Hiển thị danh sách lịch hẹn theo ngày (mặc định là hôm nay)
-        try {
-            String dateStr = request.getParameter("date"); // yyyy-MM-dd
-            Date date;
-            if (dateStr == null || dateStr.isBlank()) {
-                date = Date.valueOf(LocalDate.now());
-            } else {
-                date = Date.valueOf(dateStr);
-            }
-
-            AppointmentDto filter = new AppointmentDto();
-            filter.setAppointmentDate(date);    // exact date
-            filter.setSortMode(true);
-            filter.setPaginationMode(false);
-
-            List<Appointments> list = appointmentsDao.filterAppointment(filter);
-            request.setAttribute("appointments", list);
-            request.setAttribute("selectedDate", date.toString());
-        } catch (Exception e) {
-            e.printStackTrace();
-            request.setAttribute("errorMessage", "Không thể tải danh sách lịch hẹn.");
-        }
-
-        request.getRequestDispatcher("/views/receptionist/appointments_today.jsp").forward(request, response);
-
     }
 
     @Override
@@ -71,23 +44,24 @@ public class CheckInController extends HttpServlet {
             int appointmentId = Integer.parseInt(request.getParameter("appointmentId"));
             boolean force = "true".equalsIgnoreCase(request.getParameter("force"));
 
-            //Lấy thông tin appointment hiện tại
+            // Lấy thông tin appointment hiện tại
             Appointments ap = appointmentsDao.getAppointmentsById(appointmentId);
             if (ap == null) {
-                request.setAttribute("errorMessage", "Không tìm thấy lịch hẹn #" + appointmentId);
-                doGet(request, response);
+                String msg = "Không tìm thấy lịch hẹn #" + appointmentId;
+                response.sendRedirect(request.getContextPath() + "/lookUpAppointments?errorMessage="
+                        + java.net.URLEncoder.encode(msg, "UTF-8"));
                 return;
             }
 
-            //Kiểm tra trạng thái hợp lệ
-            if (!"Scheduled".equalsIgnoreCase(ap.getStatus())) {
-                request.setAttribute("errorMessage",
-                        "Chỉ những lịch 'Scheduled' mới được Check-in. Trạng thái hiện tại: " + ap.getStatus());
-                doGet(request, response);
+            // Kiểm tra trạng thái hợp lệ
+            if (!"Scheduled".equalsIgnoreCase(ap.getStatus()) && !"Rescheduled".equalsIgnoreCase(ap.getStatus())) {
+                String msg = "Chỉ những lịch 'Scheduled' hoặc 'Rescheduled' mới được check-in. Trạng thái hiện tại: " + ap.getStatus();
+                response.sendRedirect(request.getContextPath() + "/lookUpAppointments?errorMessage="
+                        + java.net.URLEncoder.encode(msg, "UTF-8"));
                 return;
             }
 
-            //Kiểm tra thời gian check-in hợp lệ
+            // Kiểm tra thời gian check-in hợp lệ
             LocalDate apDate = ap.getAppointmentDate().toLocalDate();
             LocalTime start = ap.getStartTime().toLocalTime();
             LocalTime end = ap.getEndTime().toLocalTime();
@@ -103,19 +77,15 @@ public class CheckInController extends HttpServlet {
                     msg = "Bệnh nhân đến quá sớm (" + minutes + " phút nữa mới đến giờ check-in).";
                 } else {
                     long late = java.time.Duration.between(LocalDateTime.of(apDate, start), now).toMinutes();
-                    msg = "Bệnh nhân đến muộn " + late + " phút. (>30 phút: nên đánh dấu No-Show)";
+                    msg = "Bệnh nhân đến muộn " + late + " phút (>30 phút: nên đánh dấu No-Show).";
                 }
-                request.setAttribute("warningMessage", msg);
-                request.setAttribute("warningAllowForce", true);
-                doGet(request, response);
+                response.sendRedirect("lookUpAppointments?errorMessage="
+                        + java.net.URLEncoder.encode(msg, "UTF-8"));
                 return;
             }
-
-            //Kiểm tra bác sĩ có làm việc trong khung giờ đó không
+            // Kiểm tra bác sĩ có làm việc trong khung giờ đó không
             ScheduleDto schFilter = new ScheduleDto();
             schFilter.setDoctorId(ap.getDoctorId().getDoctorID());
-            schFilter.setValidFrom(ap.getAppointmentDate());
-            schFilter.setValidTo(ap.getAppointmentDate());
             schFilter.setStartTime(ap.getStartTime());
             schFilter.setEndTime(ap.getEndTime());
             schFilter.setIsAvailable(true);
@@ -123,33 +93,34 @@ public class CheckInController extends HttpServlet {
 
             List<Schedules> schedules = scheduleDao.filterSchedules(schFilter);
             if (schedules.isEmpty() && !force) {
-                request.setAttribute("warningMessage",
-                        "Bác sĩ chưa có lịch làm việc chính thức hôm nay. Vẫn muốn check-in?");
-                request.setAttribute("warningAllowForce", true);
-                doGet(request, response);
+                String msg = "Bác sĩ chưa có lịch làm việc chính thức hôm nay. Vẫn muốn check-in?";
+                response.sendRedirect("lookUpAppointments?errorMessage="
+                        + java.net.URLEncoder.encode(msg, "UTF-8"));
                 return;
             }
 
-            //Nếu mọi thứ hợp lệ → cập nhật status
+            // Nếu hợp lệ → cập nhật status
             ap.setStatus("Confirmed");
             ap.setNotes((ap.getNotes() != null ? ap.getNotes() + " | " : "") + "Check-in lúc " + Timestamp.valueOf(now));
             boolean updated = appointmentsDao.updateAppointment(ap);
 
             if (updated) {
-                request.setAttribute("successMessage", ""
-                        + ap.getPatientId().getUserID().getFullName()
+                String msg = ap.getPatientId().getUserID().getFullName()
                         + " đã check-in thành công lúc "
-                        + now.getHour() + ":" + String.format("%02d", now.getMinute()));
+                        + now.getHour() + ":" + String.format("%02d", now.getMinute());
+                response.sendRedirect("lookUpAppointments?successMessage="
+                        + java.net.URLEncoder.encode(msg, "UTF-8"));
             } else {
-                request.setAttribute("errorMessage", "Không thể cập nhật trạng thái check-in.");
+                String msg = "Không thể cập nhật trạng thái check-in.";
+                response.sendRedirect("lookUpAppointments?errorMessage="
+                        + java.net.URLEncoder.encode(msg, "UTF-8"));
             }
-
-            doGet(request, response);
 
         } catch (Exception e) {
             e.printStackTrace();
-            request.setAttribute("errorMessage", "Lỗi khi xử lý check-in: " + e.getMessage());
-            doGet(request, response);
+            String msg = "Lỗi khi xử lý check-in: " + e.getMessage();
+            response.sendRedirect("lookUpAppointments?errorMessage="
+                    + java.net.URLEncoder.encode(msg, "UTF-8"));
         }
 
     }

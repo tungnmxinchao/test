@@ -1,48 +1,107 @@
-<%@ page contentType="text/html;charset=UTF-8" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<!DOCTYPE html>
+<html lang="vi">
+    <head>
+        <meta charset="UTF-8">
+        <title>Lịch làm việc bác sĩ - Dental Clinic</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<div class="schedule-section">
-    <h4>Chọn khung giờ làm việc</h4>
+        <!-- CSS -->
+        <link rel="stylesheet" href="${pageContext.request.contextPath}/css/home.css">
+        <link rel="stylesheet" href="${pageContext.request.contextPath}/css/doctor-schedule.css">
+    </head>
+    <body>
 
-    <c:choose>
-        <c:when test="${not empty availableSlots}">
-            <form action="/DentalClinic/CustomersBookSchedules" method="post">
-                <input type="hidden" name="doctorId" value="${doctorId}">
-                <input type="hidden" name="serviceId" value="${serviceId}">
-                <input type="hidden" name="appointmentDate" value="${selectedDate}">
+        <!-- Header -->
+        <jsp:include page="../../common/header.jsp"></jsp:include>
 
-                <div class="slot-list">
-                    <c:forEach var="slot" items="${availableSlots}">
-                        <label class="slot-item">
-                            <input 
-                                type="radio" 
-                                name="slot"
-                                value="${slot.startTime}-${slot.endTime}"
-                                required
-                                onclick="selectSlot('${doctorId}', '${slot.startTime}', '${slot.endTime}')">
-                            ${slot.startTime} - ${slot.endTime}
-                        </label>
-                    </c:forEach>
+        <div class="container">
+
+            <!-- 🔙 Nút quay lại -->
+            <div style="margin: 16px 0;">
+                <a href="${pageContext.request.contextPath}/appropriateSpecialist?serviceId=${serviceId}" 
+                   class="btn" 
+                   style="background-color:#4CAF50; color:white; padding:8px 16px; border-radius:6px; text-decoration:none;">
+                    ⬅ Quay lại danh sách bác sĩ
+                </a>
+            </div>
+
+            <div class="page-header">
+                <h1>Lịch làm việc của bác sĩ</h1>
+                <p>
+                    Tuần: <strong>${monday}</strong> – <strong>${sunday}</strong>
+                </p>
+
+                <div class="week-nav" style="display:flex; gap:8px; margin:8px 0;">
+                    <a class="btn"
+                       href="${pageContext.request.contextPath}/doctorWorkSchedule?doctorId=${doctorId}&serviceId=${serviceId}&weekOffset=0">
+                        Tuần này
+                    </a>
+                    <a class="btn"
+                       href="${pageContext.request.contextPath}/doctorWorkSchedule?doctorId=${doctorId}&serviceId=${serviceId}&weekOffset=${weekOffset + 1}">
+                        Tuần sau ⟶
+                    </a>
                 </div>
+            </div>
 
-                <div class="notes-box">
-                    <label for="notes-${doctorId}">Ghi chú (nếu có):</label>
-                    <textarea name="notes" id="notes-${doctorId}" placeholder="Ví dụ: đau răng bên trái, khám nhanh..." rows="3"></textarea>
-                </div>
+            <hr/>
 
-                <button type="submit" class="btn-confirm">Xác nhận đặt lịch</button>
-            </form>
-        </c:when>
-        <c:otherwise>
-            <p style="color: gray;">Không có khung giờ trống cho ngày hôm nay.</p>
-        </c:otherwise>
-    </c:choose>
-</div>
+            <!-- Nếu toàn tuần trống -->
+            <c:if test="${empty availableByDate}">
+                <p style="text-align:center; color:gray;">Chưa có dữ liệu lịch làm việc trong tuần.</p>
+            </c:if>
 
-<script>
-    // Hàm chọn khung giờ -> lưu vào hidden input
-    function selectSlot(doctorId, start, end) {
-        document.getElementById("startTime-" + doctorId).value = start;
-        document.getElementById("endTime-" + doctorId).value = end;
-    }
-</script>
+            <!-- Lưới các ngày trong tuần -->
+            <div class="schedule-week" style="display:grid; grid-template-columns: repeat(1, minmax(0, 1fr)); gap:16px;">
+                <c:forEach var="entry" items="${availableByDate}">
+                    <c:set var="date" value="${entry.key}" />
+                    <c:set var="slots" value="${entry.value}" />
+
+                    <div class="day-card" style="border:1px solid #eee; border-radius:12px; padding:16px;">
+                        <div class="day-header" style="display:flex; justify-content:space-between; align-items:center;">
+                            <h3 style="margin:0;">${date}</h3>
+                            <span class="slot-count" style="color:#666;">
+                                <c:choose>
+                                    <c:when test="${empty slots}">Không có khung giờ trống</c:when>
+                                    <c:otherwise>${fn:length(slots)} khung giờ</c:otherwise>
+                                </c:choose>
+                            </span>
+                        </div>
+
+                        <div class="slot-list" style="margin-top:12px;">
+                            <c:choose>
+                                <c:when test="${empty slots}">
+                                    <p style="color:gray; margin:8px 0 0;">—</p>
+                                </c:when>
+                                <c:otherwise>
+                                    <ul style="list-style:none; padding:0; margin:0; display:flex; flex-wrap:wrap; gap:8px;">
+                                        <c:forEach var="s" items="${slots}">
+                                            <li class="slot-item"
+                                                style="display:flex; align-items:center; gap:8px; border:1px solid #ddd; border-radius:10px; padding:8px 12px;">
+                                                <span class="time" style="font-weight:600;">
+                                                    ${s.startTime} - ${s.endTime}
+                                                </span>
+                                                <a class="btn"
+                                                   style="margin-left:auto;"
+                                                   href="${pageContext.request.contextPath}/appointmentCreate?doctorId=${doctorId}&serviceId=${serviceId}&date=${date}&start=${s.startTime}&end=${s.endTime}">
+                                                    Chọn khung giờ này
+                                                </a>
+                                            </li>
+                                        </c:forEach>
+                                    </ul>
+                                </c:otherwise>
+                            </c:choose>
+                        </div>
+                    </div>
+                </c:forEach>
+            </div>
+
+        </div>
+
+        <!-- Footer -->
+        <jsp:include page="../../common/footer.jsp"></jsp:include>
+
+    </body>
+</html>

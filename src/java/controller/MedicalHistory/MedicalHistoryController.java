@@ -41,19 +41,21 @@ public class MedicalHistoryController extends HttpServlet {
 
         try {
             //Giả định bệnh nhân hiện tại (TODO: sau này lấy từ session)
-            int patientId = 3;
+            int patientId = 1; // TODO: lấy từ session
 
-            // ===== LẤY THAM SỐ LỌC =====
             String status = req.getParameter("status");
             String doctorId = req.getParameter("doctorId");
             String serviceId = req.getParameter("serviceId");
+            String doctorName = req.getParameter("doctorName");   // <-- NEW
+            String serviceName = req.getParameter("serviceName");  // <-- NEW
             String fromDate = req.getParameter("fromDate");
             String toDate = req.getParameter("toDate");
             String pageStr = req.getParameter("page");
+            String sizeStr = req.getParameter("size");         // <-- NEW
 
-            // ===== CHUẨN BỊ DTO CHO APPOINTMENT =====
             AppointmentDto filter = new AppointmentDto();
             filter.setPatientId(patientId);
+
             if (status != null && !status.isBlank()) {
                 filter.setStatus(status.trim());
             }
@@ -63,16 +65,31 @@ public class MedicalHistoryController extends HttpServlet {
             if (serviceId != null && !serviceId.isBlank()) {
                 filter.setServiceId(Integer.parseInt(serviceId));
             }
-            if (pageStr != null && !pageStr.isBlank()) {
-                filter.setPage(Integer.parseInt(pageStr));
+            if (doctorName != null && !doctorName.isBlank()) {
+                filter.setDoctorName(doctorName.trim());
             }
-            filter.setPaginationMode(true);
-            filter.setSortMode(true);
+            if (serviceName != null && !serviceName.isBlank()) {
+                filter.setServiceName(serviceName.trim());
+            }
             if (fromDate != null && !fromDate.isBlank()) {
-                filter.setCreatedDate(Date.valueOf(fromDate));
+                filter.setAppointmentDateFrom(Date.valueOf(fromDate));
+            }
+            if (toDate != null && !toDate.isBlank()) {
+                filter.setAppointmentDateTo(Date.valueOf(toDate));
             }
 
-            // ===== LẤY DANH SÁCH LỊCH HẸN =====
+            int page = (pageStr != null && !pageStr.isBlank()) ? Integer.parseInt(pageStr) : 1;
+            int size = (sizeStr != null && !sizeStr.isBlank()) ? Integer.parseInt(sizeStr) : 10;
+            filter.setPage(page);
+            filter.setSize(size);
+            filter.setPaginationMode(true);
+            filter.setSortMode(true);
+
+            // Đếm tổng trước (cho phân trang)
+            int totalItems = appointmentsDao.countAppointments(filter);
+            int totalPages = (int) Math.ceil(totalItems / (double) size);
+
+            // Lấy danh sách
             List<Appointments> appointments = appointmentsDao.filterAppointment(filter);
 
             // ===== TẠO MAP CHỨA RECORD & PRESCRIPTION =====
@@ -110,6 +127,11 @@ public class MedicalHistoryController extends HttpServlet {
             req.setAttribute("appointments", appointments);
             req.setAttribute("recordsMap", recordsMap);
             req.setAttribute("prescriptionsMap", prescriptionsMap);
+
+            req.setAttribute("page", page);
+            req.setAttribute("size", size);
+            req.setAttribute("totalItems", totalItems);
+            req.setAttribute("totalPages", totalPages);
 
             req.getRequestDispatcher("/views/patient/medical_history.jsp").forward(req, resp);
 

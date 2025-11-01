@@ -91,23 +91,69 @@ public class DoctorDao extends DBContext {
     }
 
     public Doctor getDoctorByID(int doctorId) {
-        String sql = "SELECT DoctorID, UserID, Specialization, LicenseNumber, YearsOfExperience, Education, Biography, ConsultationFee "
-                + "FROM dbo.Doctors WHERE DoctorID = ?";
+        final String sql = """
+        SELECT 
+            d.DoctorID,
+            d.UserID,
+            d.Specialization,
+            d.LicenseNumber,
+            d.YearsOfExperience,
+            d.Education,
+            d.Biography,
+            d.ConsultationFee,
+
+            u.UserID         AS u_UserID,
+            u.Username       AS u_Username,
+            u.PasswordHash   AS u_PasswordHash,
+            u.Email          AS u_Email,
+            u.FullName       AS u_FullName,
+            u.PhoneNumber    AS u_PhoneNumber,
+            u.DateOfBirth    AS u_DateOfBirth,
+            u.Gender         AS u_Gender,
+            u.Address        AS u_Address,
+            u.Role           AS u_Role,
+            u.IsActive       AS u_IsActive,
+            u.CreatedDate    AS u_CreatedDate
+        FROM dbo.Doctors d
+        JOIN dbo.Users   u ON u.UserID = d.UserID
+        WHERE d.DoctorID = ?
+        """;
+
         try (Connection connect = new DBContext().connection; PreparedStatement ps = connect.prepareStatement(sql)) {
+
             ps.setInt(1, doctorId);
+
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     Doctor doctor = new Doctor();
                     doctor.setDoctorID(rs.getInt("DoctorID"));
+
+                    // Map Users
                     Users user = new Users();
-                    user.setUserId(rs.getInt("UserID"));
+                    user.setUserId(rs.getInt("u_UserID"));
+                    user.setUserName(rs.getString("u_Username"));
+                    user.setPassWord(rs.getString("u_PasswordHash")); // nếu field trong model là passWord
+                    user.setEmail(rs.getString("u_Email"));
+                    user.setFullName(rs.getString("u_FullName"));
+                    user.setPhoneNumber(rs.getString("u_PhoneNumber"));
+                    user.setDateOfBirth(rs.getDate("u_DateOfBirth")); // java.sql.Date
+                    user.setGender(rs.getString("u_Gender"));
+                    user.setAddress(rs.getString("u_Address"));
+                    user.setRole(rs.getString("u_Role"));
+                    // chú ý: getBoolean trả false khi NULL; nếu cần phân biệt null -> dùng getObject
+                    user.setIsActive(rs.getObject("u_IsActive") == null ? null : rs.getBoolean("u_IsActive"));
+                    user.setCreateDate(rs.getDate("u_CreatedDate"));
+
                     doctor.setUserId(user);
+
+                    // Map Doctor
                     doctor.setSpecialization(rs.getString("Specialization"));
                     doctor.setLicenseNumber(rs.getString("LicenseNumber"));
                     doctor.setYearsOfExperience(rs.getInt("YearsOfExperience"));
                     doctor.setEducation(rs.getString("Education"));
                     doctor.setBiography(rs.getString("Biography"));
                     doctor.setConsultationFee(rs.getBigDecimal("ConsultationFee"));
+
                     return doctor;
                 }
             }

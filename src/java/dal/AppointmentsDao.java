@@ -163,28 +163,46 @@ public class AppointmentsDao extends DBContext {
             ap.Notes,
             ap.CreatedDate,
             ap.UpdatedDate,
-            u_patient.FullName AS PatientName,
+            u_patient.FullName   AS PatientName,
             u_patient.PhoneNumber AS PatientPhone,
-            u_doctor.FullName AS DoctorName,
+            u_doctor.FullName    AS DoctorName,
             s.ServiceName
         FROM dbo.Appointments ap
-        JOIN dbo.Patients p ON ap.PatientID = p.PatientID
-        JOIN dbo.Users u_patient ON p.UserID = u_patient.UserID
-        JOIN dbo.Doctors d ON ap.DoctorID = d.DoctorID
-        JOIN dbo.Users u_doctor ON d.UserID = u_doctor.UserID
-        JOIN dbo.Services s ON ap.ServiceID = s.ServiceID
+        JOIN dbo.Patients p      ON ap.PatientID = p.PatientID
+        JOIN dbo.Users u_patient ON p.UserID     = u_patient.UserID
+        JOIN dbo.Doctors d       ON ap.DoctorID  = d.DoctorID
+        JOIN dbo.Users u_doctor  ON d.UserID     = u_doctor.UserID
+        JOIN dbo.Services s      ON ap.ServiceID = s.ServiceID
         WHERE 1=1
     """);
 
+        // ====== Lọc theo ID (cứng) ======
+        if (a.getPatientId() != null) {
+            sql.append(" AND ap.PatientID = ? ");
+        }
+        if (a.getDoctorId() != null) {
+            sql.append(" AND ap.DoctorID  = ? ");
+        }
+        if (a.getServiceId() != null) {
+            sql.append(" AND ap.ServiceID = ? ");
+        }
+
+        // ====== Lọc mềm (LIKE theo tên/SDT) ======
         if (a.getPatientName() != null && !a.getPatientName().isBlank()) {
-            sql.append(" AND u_patient.FullName LIKE ? ");
+            sql.append(" AND u_patient.FullName   LIKE ? ");
         }
         if (a.getPhoneNumber() != null && !a.getPhoneNumber().isBlank()) {
             sql.append(" AND u_patient.PhoneNumber LIKE ? ");
         }
         if (a.getDoctorName() != null && !a.getDoctorName().isBlank()) {
-            sql.append(" AND u_doctor.FullName LIKE ? ");
+            sql.append(" AND u_doctor.FullName    LIKE ? ");
         }
+        // NEW: tìm theo tên dịch vụ
+        if (a.getServiceName() != null && !a.getServiceName().isBlank()) {
+            sql.append(" AND s.ServiceName        LIKE ? ");
+        }
+
+        // ====== Lọc theo ngày ======
         if (a.getAppointmentDate() != null) {
             sql.append(" AND ap.AppointmentDate = ? ");
         } else {
@@ -195,16 +213,20 @@ public class AppointmentsDao extends DBContext {
                 sql.append(" AND ap.AppointmentDate <= ? ");
             }
         }
+
+        // ====== Trạng thái ======
         if (a.getStatus() != null && !a.getStatus().isBlank()) {
             sql.append(" AND ap.Status = ? ");
         }
 
+        // ====== Sắp xếp ======
         if (a.isSortMode()) {
             sql.append(" ORDER BY ap.AppointmentDate DESC, ap.StartTime ASC ");
         } else {
             sql.append(" ORDER BY ap.AppointmentDate DESC ");
         }
 
+        // ====== Phân trang ======
         if (a.isPaginationMode()) {
             sql.append(" OFFSET ? ROWS FETCH NEXT ? ROWS ONLY ");
         }
@@ -212,6 +234,19 @@ public class AppointmentsDao extends DBContext {
         try (Connection connection = new DBContext().connection; PreparedStatement ps = connection.prepareStatement(sql.toString())) {
 
             int i = 1;
+
+            // ---- set tham số ID
+            if (a.getPatientId() != null) {
+                ps.setInt(i++, a.getPatientId());
+            }
+            if (a.getDoctorId() != null) {
+                ps.setInt(i++, a.getDoctorId());
+            }
+            if (a.getServiceId() != null) {
+                ps.setInt(i++, a.getServiceId());
+            }
+
+            // ---- set tham số LIKE (mềm)
             if (a.getPatientName() != null && !a.getPatientName().isBlank()) {
                 ps.setString(i++, "%" + a.getPatientName().trim() + "%");
             }
@@ -221,6 +256,11 @@ public class AppointmentsDao extends DBContext {
             if (a.getDoctorName() != null && !a.getDoctorName().isBlank()) {
                 ps.setString(i++, "%" + a.getDoctorName().trim() + "%");
             }
+            if (a.getServiceName() != null && !a.getServiceName().isBlank()) {
+                ps.setString(i++, "%" + a.getServiceName().trim() + "%");
+            }
+
+            // ---- set tham số ngày
             if (a.getAppointmentDate() != null) {
                 ps.setDate(i++, a.getAppointmentDate());
             } else {
@@ -231,26 +271,142 @@ public class AppointmentsDao extends DBContext {
                     ps.setDate(i++, a.getAppointmentDateTo());
                 }
             }
+
+            // ---- set trạng thái
             if (a.getStatus() != null && !a.getStatus().isBlank()) {
                 ps.setString(i++, a.getStatus().trim());
             }
 
+            // ---- set phân trang
             if (a.isPaginationMode()) {
-                ps.setInt(i++, (a.getPage() - 1) * a.getSize());
-                ps.setInt(i++, a.getSize());
+                int page = Math.max(a.getPage(), 1);
+                int size = Math.max(a.getSize(), 1);
+                ps.setInt(i++, (page - 1) * size);
+                ps.setInt(i++, size);
             }
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    list.add(mapRowWithJoin(rs));
+                    list.add(mapRowWithJoin(rs)); // giữ nguyên mapper của bạn
                 }
             }
-
         } catch (Exception e) {
             e.printStackTrace();
         }
 
         return list;
+    }
+
+    public int countAppointments(AppointmentDto a) {
+        StringBuilder sql = new StringBuilder("""
+        SELECT COUNT(1)
+        FROM dbo.Appointments ap
+        JOIN dbo.Patients p      ON ap.PatientID = p.PatientID
+        JOIN dbo.Users u_patient ON p.UserID     = u_patient.UserID
+        JOIN dbo.Doctors d       ON ap.DoctorID  = d.DoctorID
+        JOIN dbo.Users u_doctor  ON d.UserID     = u_doctor.UserID
+        JOIN dbo.Services s      ON ap.ServiceID = s.ServiceID
+        WHERE 1=1
+    """);
+
+        // ====== Lọc theo ID (cứng) ======
+        if (a.getPatientId() != null) {
+            sql.append(" AND ap.PatientID = ? ");
+        }
+        if (a.getDoctorId() != null) {
+            sql.append(" AND ap.DoctorID  = ? ");
+        }
+        if (a.getServiceId() != null) {
+            sql.append(" AND ap.ServiceID = ? ");
+        }
+
+        // ====== Lọc mềm (LIKE theo tên/SDT/Dịch vụ) ======
+        if (a.getPatientName() != null && !a.getPatientName().isBlank()) {
+            sql.append(" AND u_patient.FullName LIKE ? ");
+        }
+        if (a.getPhoneNumber() != null && !a.getPhoneNumber().isBlank()) {
+            sql.append(" AND u_patient.PhoneNumber LIKE ? ");
+        }
+        if (a.getDoctorName() != null && !a.getDoctorName().isBlank()) {
+            sql.append(" AND u_doctor.FullName LIKE ? ");
+        }
+        if (a.getServiceName() != null && !a.getServiceName().isBlank()) {
+            sql.append(" AND s.ServiceName LIKE ? ");
+        }
+
+        // ====== Lọc theo ngày ======
+        if (a.getAppointmentDate() != null) {
+            sql.append(" AND ap.AppointmentDate = ? ");
+        } else {
+            if (a.getAppointmentDateFrom() != null) {
+                sql.append(" AND ap.AppointmentDate >= ? ");
+            }
+            if (a.getAppointmentDateTo() != null) {
+                sql.append(" AND ap.AppointmentDate <= ? ");
+            }
+        }
+
+        // ====== Lọc theo trạng thái ======
+        if (a.getStatus() != null && !a.getStatus().isBlank()) {
+            sql.append(" AND ap.Status = ? ");
+        }
+
+        try (Connection connection = new DBContext().connection; PreparedStatement ps = connection.prepareStatement(sql.toString())) {
+
+            int i = 1;
+
+            // ---- set tham số ID
+            if (a.getPatientId() != null) {
+                ps.setInt(i++, a.getPatientId());
+            }
+            if (a.getDoctorId() != null) {
+                ps.setInt(i++, a.getDoctorId());
+            }
+            if (a.getServiceId() != null) {
+                ps.setInt(i++, a.getServiceId());
+            }
+
+            // ---- set tham số LIKE (mềm)
+            if (a.getPatientName() != null && !a.getPatientName().isBlank()) {
+                ps.setString(i++, "%" + a.getPatientName().trim() + "%");
+            }
+            if (a.getPhoneNumber() != null && !a.getPhoneNumber().isBlank()) {
+                ps.setString(i++, "%" + a.getPhoneNumber().trim() + "%");
+            }
+            if (a.getDoctorName() != null && !a.getDoctorName().isBlank()) {
+                ps.setString(i++, "%" + a.getDoctorName().trim() + "%");
+            }
+            if (a.getServiceName() != null && !a.getServiceName().isBlank()) {
+                ps.setString(i++, "%" + a.getServiceName().trim() + "%");
+            }
+
+            // ---- set tham số ngày
+            if (a.getAppointmentDate() != null) {
+                ps.setDate(i++, a.getAppointmentDate());
+            } else {
+                if (a.getAppointmentDateFrom() != null) {
+                    ps.setDate(i++, a.getAppointmentDateFrom());
+                }
+                if (a.getAppointmentDateTo() != null) {
+                    ps.setDate(i++, a.getAppointmentDateTo());
+                }
+            }
+
+            // ---- set trạng thái
+            if (a.getStatus() != null && !a.getStatus().isBlank()) {
+                ps.setString(i++, a.getStatus().trim());
+            }
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return 0;
     }
 
     private Appointments mapRowWithJoin(ResultSet rs) throws SQLException {
@@ -326,6 +482,7 @@ public class AppointmentsDao extends DBContext {
             return null;
 
         } catch (java.sql.SQLException e) {
+            System.out.println(e.getMessage());
             return null;
         }
     }

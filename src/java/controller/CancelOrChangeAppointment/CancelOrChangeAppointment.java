@@ -48,7 +48,7 @@ public class CancelOrChangeAppointment extends HttpServlet {
         Appointments appointment = appointmentsDao.getAppointmentsById(appointmentId);
         if (appointment == null) {
             req.setAttribute("error", "Không tìm thấy lịch hẹn!");
-            req.getRequestDispatcher("/appointments/manage.jsp").forward(req, resp);
+            req.getRequestDispatcher("error.jsp").forward(req, resp);
             return;
         }
 
@@ -59,12 +59,12 @@ public class CancelOrChangeAppointment extends HttpServlet {
                 handleReschedule(req, resp, appointment);
             } else {
                 req.setAttribute("error", "Hành động không hợp lệ!");
-                req.getRequestDispatcher("/appointments/manage.jsp").forward(req, resp);
+                req.getRequestDispatcher("error.jsp").forward(req, resp);
             }
         } catch (Exception e) {
             e.printStackTrace();
             req.setAttribute("error", "Lỗi xử lý: " + e.getMessage());
-            req.getRequestDispatcher("/appointments/manage.jsp").forward(req, resp);
+            req.getRequestDispatcher("error.jsp").forward(req, resp);
         }
 
     }
@@ -78,8 +78,8 @@ public class CancelOrChangeAppointment extends HttpServlet {
         String currentStatus = appointment.getStatus();
         if (!"Scheduled".equalsIgnoreCase(currentStatus)
                 && !"Rescheduled".equalsIgnoreCase(currentStatus)) {
-            req.setAttribute("error", "Chỉ có thể hủy lịch hẹn đang ở trạng thái 'Scheduled' hoặc 'Rescheduled'.");
-            req.getRequestDispatcher("/appointments/manage.jsp").forward(req, resp);
+            req.setAttribute("error", "Chỉ có thể hủy lịch hẹn đang ở trạng thái 'Scheduled'.");
+            req.getRequestDispatcher("error.jsp").forward(req, resp);
             return;
         }
 
@@ -90,7 +90,7 @@ public class CancelOrChangeAppointment extends HttpServlet {
         boolean success = appointmentsDao.updateAppointment(appointment);
         if (!success) {
             req.setAttribute("error", "Không thể hủy lịch hẹn!");
-            req.getRequestDispatcher("/appointments/manage.jsp").forward(req, resp);
+            req.getRequestDispatcher("error.jsp").forward(req, resp);
             return;
         }
 
@@ -109,18 +109,18 @@ public class CancelOrChangeAppointment extends HttpServlet {
         );
 
         req.setAttribute("message", "Hủy lịch hẹn thành công!");
-        req.getRequestDispatcher("/appointments/manage.jsp").forward(req, resp);
+        resp.sendRedirect("medicalHistory");
     }
 
     /**
-     * 🧱 Thay đổi lịch hẹn
+     * Thay đổi lịch hẹn
      */
     private void handleReschedule(HttpServletRequest req, HttpServletResponse resp, Appointments appointment)
             throws ServletException, IOException {
 
         Date newDate = Date.valueOf(req.getParameter("newDate"));
-        Time newStart = Time.valueOf(req.getParameter("newStart") + ":00");
-        Time newEnd = Time.valueOf(req.getParameter("newEnd") + ":00");
+        Time newStart = toSqlTimeFlexible(req.getParameter("newStart"));
+        Time newEnd = toSqlTimeFlexible(req.getParameter("newEnd"));
 
         // Kiểm tra hợp lệ thời gian
         if (!newEnd.after(newStart)) {
@@ -153,7 +153,7 @@ public class CancelOrChangeAppointment extends HttpServlet {
 
         if (!isFree) {
             req.setAttribute("error", "Bác sĩ không trống trong khung giờ này!");
-            req.getRequestDispatcher("/appointments/manage.jsp").forward(req, resp);
+            req.getRequestDispatcher("error.jsp").forward(req, resp);
             return;
         }
 
@@ -167,7 +167,7 @@ public class CancelOrChangeAppointment extends HttpServlet {
         boolean success = appointmentsDao.updateAppointment(appointment);
         if (!success) {
             req.setAttribute("error", "Không thể thay đổi lịch hẹn!");
-            req.getRequestDispatcher("/appointments/manage.jsp").forward(req, resp);
+            req.getRequestDispatcher("error.jsp").forward(req, resp);
             return;
         }
 
@@ -188,12 +188,40 @@ public class CancelOrChangeAppointment extends HttpServlet {
         );
 
         req.setAttribute("message", "Thay đổi lịch hẹn thành công!");
-        req.getRequestDispatcher("/appointments/manage.jsp").forward(req, resp);
+        resp.sendRedirect("medicalHistory");
     }
 
     @Override
     public String getServletInfo() {
         return "Short description";
+    }
+
+    private static java.sql.Time toSqlTimeFlexible(String input) {
+        if (input == null) {
+            throw new IllegalArgumentException("Thiếu tham số giờ");
+        }
+        String s = input.trim();
+        if (s.isEmpty()) {
+            throw new IllegalArgumentException("Giờ rỗng");
+        }
+
+        // Nếu có phần mili giây => cắt bỏ
+        int dot = s.indexOf('.');
+        if (dot > 0) {
+            s = s.substring(0, dot);
+        }
+
+        // Nếu dạng HH:mm thì bổ sung giây
+        if (s.matches("\\d{2}:\\d{2}")) {
+            s = s + ":00";
+        }
+
+        // Chỉ chấp nhận HH:mm:ss
+        if (!s.matches("\\d{2}:\\d{2}:\\d{2}")) {
+            throw new IllegalArgumentException("Định dạng giờ không hợp lệ (HH:mm hoặc HH:mm:ss): " + input);
+        }
+
+        return java.sql.Time.valueOf(s);
     }
 
 }

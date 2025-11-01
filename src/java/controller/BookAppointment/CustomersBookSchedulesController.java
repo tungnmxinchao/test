@@ -7,7 +7,6 @@ package controller.BookAppointment;
 import dal.AppointmentsDao;
 import dal.NotificationsDao;
 import java.io.IOException;
-import java.io.PrintWriter;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -38,33 +37,56 @@ public class CustomersBookSchedulesController extends HttpServlet {
             request.setCharacterEncoding("UTF-8");
             response.setCharacterEncoding("UTF-8");
 
-            //Lấy thông tin từ form đặt lịch (client gửi lên)
-            //int patientId = Integer.parseInt(request.getParameter("patientId"));
-            int patientId = 3;
+            // ==== Lấy patientId: ưu tiên session; fallback tạm thời = 3 ====
+            Integer patientId = null;
+            try {
+                // ví dụ: bạn lưu Users hoặc Patients trong session
+                Object patientObj = request.getSession().getAttribute("patient");
+                if (patientObj instanceof Patients) {
+                    patientId = ((Patients) patientObj).getPatientID();
+                } else {
+                    Object userObj = request.getSession().getAttribute("account");
+                    // nếu account là Users, bạn có thể tra patientId theo userId qua PatientDao (nếu có)
+                    // patientId = new PatientDao().getPatientIdByUserId(((Users)userObj).getUserId());
+                }
+            } catch (Exception ignore) {}
+            if (patientId == null) patientId = 1; // fallback hiện tại
 
-            int doctorId = Integer.parseInt(request.getParameter("doctorId"));
+            // ==== Lấy tham số từ form ====
+            int doctorId  = Integer.parseInt(request.getParameter("doctorId"));
             int serviceId = Integer.parseInt(request.getParameter("serviceId"));
-            String dateStr = request.getParameter("appointmentDate");
-            String slot = request.getParameter("slot");
-            String notes = request.getParameter("notes");
 
+            String dateStr = safeTrim(request.getParameter("appointmentDate"));
+            String slot    = safeTrim(request.getParameter("slot"));
+            String notes   = safeTrim(request.getParameter("notes"));
+
+            if (dateStr == null || dateStr.isEmpty()) {
+                request.setAttribute("error", "Thiếu ngày hẹn (appointmentDate).");
+                request.getRequestDispatcher("/error.jsp").forward(request, response);
+                return;
+            }
             if (slot == null || !slot.contains("-")) {
                 request.setAttribute("error", "Dữ liệu khung giờ không hợp lệ.");
                 request.getRequestDispatcher("/error.jsp").forward(request, response);
                 return;
             }
 
-            // ===== Tách start và end =====
+            // ==== Tách start - end ====
             String[] timeParts = slot.split("-");
+            if (timeParts.length < 2) {
+                request.setAttribute("error", "Dữ liệu khung giờ không hợp lệ.");
+                request.getRequestDispatcher("/error.jsp").forward(request, response);
+                return;
+            }
             String startStr = timeParts[0].trim();
-            String endStr = timeParts[1].trim();
+            String endStr   = timeParts[1].trim();
 
-            // ===== Parse sang SQL types =====
+            // ==== Parse sang SQL types ====
             java.sql.Date appointmentDate = java.sql.Date.valueOf(dateStr);
-            java.sql.Time startTime = java.sql.Time.valueOf(startStr);
-            java.sql.Time endTime = java.sql.Time.valueOf(endStr);
+            java.sql.Time startTime       = java.sql.Time.valueOf(startStr);
+            java.sql.Time endTime         = java.sql.Time.valueOf(endStr);
 
-            // Tạo đối tượng Appointments
+            // ==== Tạo entity Appointments ====
             Appointments a = new Appointments();
             a.setPatientId(new Patients(patientId));
             a.setDoctorId(new Doctor(doctorId));
@@ -75,37 +97,35 @@ public class CustomersBookSchedulesController extends HttpServlet {
             a.setNotes(notes);
             a.setStatus("Scheduled");
 
-            //Gọi DAO insertAppointment()
+            // ==== Insert ====
             AppointmentsDao appointmentDAO = new AppointmentsDao();
             Integer newId = appointmentDAO.insertAppointment(a);
 
             if (newId == null) {
-                //Lỗi (bác sĩ bận hoặc dữ liệu sai)
                 request.setAttribute("error", "Không thể đặt lịch. Có thể bác sĩ đã bận trong khung giờ này.");
                 request.getRequestDispatcher("/error.jsp").forward(request, response);
                 return;
             }
 
-            //Gửi thông báo (Patient & Doctor)
+            // ==== Notifications (tuỳ chọn: lấy tên thật từ DB) ====
             NotificationsDao notiDAO = new NotificationsDao();
-
-            //Thông tin bác sĩ / bệnh nhân theo ID:
-            String doctorName = "Bác sĩ #" + doctorId;
+            String doctorName  = "Bác sĩ #" + doctorId;
             String patientName = "Bệnh nhân #" + patientId;
+
             String messageForPatient = "Bạn đã đặt lịch khám với " + doctorName
                     + " vào ngày " + dateStr + " lúc " + startStr + ".";
-            String messageForDoctor = patientName + " đã đặt lịch khám vào ngày "
+            String messageForDoctor  = patientName + " đã đặt lịch khám vào ngày "
                     + dateStr + " lúc " + startStr + ".";
 
             notiDAO.insert(patientId, "Xác nhận đặt lịch", messageForPatient, "Appointment");
-            notiDAO.insert(doctorId, "Lịch hẹn mới", messageForDoctor, "Appointment");
+            notiDAO.insert(doctorId,  "Lịch hẹn mới",      messageForDoctor,  "Appointment");
 
-            // Gửi về trang xác nhận thành công
+            // ==== Thành công ====
             request.setAttribute("appointmentId", newId);
             request.getRequestDispatcher("/appointment-success.jsp").forward(request, response);
 
         } catch (Exception e) {
-
+            e.printStackTrace();
             request.setAttribute("error", "Đã xảy ra lỗi trong quá trình đặt lịch.");
             request.getRequestDispatcher("/error.jsp").forward(request, response);
         }
@@ -116,5 +136,9 @@ public class CustomersBookSchedulesController extends HttpServlet {
     public String getServletInfo() {
         return "Short description";
     }// </editor-fold>
+    
+    private String safeTrim(String s) {
+        return s == null ? null : s.trim();
+    }
 
 }

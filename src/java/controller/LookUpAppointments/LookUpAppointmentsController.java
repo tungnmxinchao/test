@@ -7,7 +7,6 @@ package controller.LookUpAppointments;
 import dal.AppointmentsDao;
 import dto.AppointmentDto;
 import java.io.IOException;
-import java.io.PrintWriter;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -29,87 +28,81 @@ public class LookUpAppointmentsController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        //Hiển thị trang tra cứu (ban đầu rỗng hoặc có sẵn danh sách)
+        
+        String errorMessage = request.getParameter("errorMessage");
+        String successMessage = request.getParameter("successMessage");
+        request.setAttribute("errorMessage", errorMessage);
+        request.setAttribute("successMessage", successMessage);
         try {
-            AppointmentDto filter = new AppointmentDto();
-            filter.setPaginationMode(true);
-            filter.setPage(1);
-            filter.setSize(10);
+            request.setCharacterEncoding("UTF-8");
 
+            // ===== Lấy tham số trang =====
+            int page = 1;
+            int size = 10;
+            if (request.getParameter("page") != null) {
+                page = Integer.parseInt(request.getParameter("page"));
+            }
+
+            // ===== Lấy các filter từ query string =====
+            AppointmentDto filter = new AppointmentDto();
+            if (request.getParameter("patientId") != null && !request.getParameter("patientId").isEmpty()) {
+                filter.setPatientId(Integer.parseInt(request.getParameter("patientId")));
+            }
+            if (request.getParameter("doctorId") != null && !request.getParameter("doctorId").isEmpty()) {
+                filter.setDoctorId(Integer.parseInt(request.getParameter("doctorId")));
+            }
+            if (request.getParameter("status") != null && !request.getParameter("status").isEmpty()) {
+                filter.setStatus(request.getParameter("status"));
+            }
+            if (request.getParameter("patientName") != null && !request.getParameter("patientName").isEmpty()) {
+                filter.setPatientName(request.getParameter("patientName").trim());
+            }
+            if (request.getParameter("phoneNumber") != null && !request.getParameter("phoneNumber").isEmpty()) {
+                filter.setPhoneNumber(request.getParameter("phoneNumber").trim());
+            }
+            if (request.getParameter("doctorName") != null && !request.getParameter("doctorName").isEmpty()) {
+                filter.setDoctorName(request.getParameter("doctorName").trim());
+            }
+            if (request.getParameter("serviceName") != null && !request.getParameter("serviceName").isEmpty()) {
+                filter.setServiceName(request.getParameter("serviceName").trim());
+            }
+
+            if (request.getParameter("fromDate") != null && !request.getParameter("fromDate").isEmpty()) {
+                filter.setAppointmentDateFrom(Date.valueOf(request.getParameter("fromDate")));
+            }
+            if (request.getParameter("toDate") != null && !request.getParameter("toDate").isEmpty()) {
+                filter.setAppointmentDateTo(Date.valueOf(request.getParameter("toDate")));
+            }
+
+            // ===== Thiết lập phân trang =====
+            filter.setPaginationMode(true);
+            filter.setPage(page);
+            filter.setSize(size);
+
+            // ===== Gọi DAO =====
             List<Appointments> appointments = appointmentsDAO.filterAppointment(filter);
+            int totalRecords = appointmentsDAO.countAppointments(filter);
+            int totalPages = (int) Math.ceil((double) totalRecords / size);
+
+            // ===== Truyền dữ liệu cho JSP =====
             request.setAttribute("appointments", appointments);
+            request.setAttribute("filter", filter);
+            request.setAttribute("page", page);
+            request.setAttribute("size", size);
+            request.setAttribute("totalPages", totalPages);
+            request.setAttribute("baseUrl","/lookUpAppointments");
 
         } catch (Exception e) {
             e.printStackTrace();
             request.setAttribute("error", "Không thể tải danh sách lịch hẹn.");
         }
 
-        request.getRequestDispatcher("lookup_appointments.jsp").forward(request, response);
-
+        request.getRequestDispatcher("views/receptionist/lookup.jsp").forward(request, response);
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        request.setCharacterEncoding("UTF-8");
-
-        try {
-            // Lấy tham số từ form
-            String patientIdStr = request.getParameter("patientId");
-            String doctorIdStr = request.getParameter("doctorId");
-            String status = request.getParameter("status");
-            String fromDateStr = request.getParameter("fromDate");
-            String toDateStr = request.getParameter("toDate");
-            String patientName = request.getParameter("patientName");
-            String phoneNumber = request.getParameter("phoneNumber");
-            String doctorName = request.getParameter("doctorName");
-
-            AppointmentDto filter = new AppointmentDto();
-
-            if (patientIdStr != null && !patientIdStr.isEmpty()) {
-                filter.setPatientId(Integer.parseInt(patientIdStr));
-            }
-            if (doctorIdStr != null && !doctorIdStr.isEmpty()) {
-                filter.setDoctorId(Integer.parseInt(doctorIdStr));
-            }
-            if (status != null && !status.isEmpty()) {
-                filter.setStatus(status);
-            }
-            if (patientName != null && !patientName.isEmpty()) {
-                filter.setPatientName(patientName.trim());
-            }
-            if (phoneNumber != null && !phoneNumber.isEmpty()) {
-                filter.setPhoneNumber(phoneNumber.trim());
-            }
-            if (doctorName != null && !doctorName.isEmpty()) {
-                filter.setDoctorName(doctorName.trim());
-            }
-
-            // Chuyển đổi ngày
-            if (fromDateStr != null && !fromDateStr.isEmpty()) {
-                filter.setAppointmentDateFrom(Date.valueOf(fromDateStr));
-            }
-            if (toDateStr != null && !toDateStr.isEmpty()) {
-                filter.setAppointmentDateTo(Date.valueOf(toDateStr));
-            }
-
-            filter.setPaginationMode(true);
-            filter.setPage(1);
-            filter.setSize(10);
-
-            // Gọi DAO để lấy dữ liệu
-            List<Appointments> appointments = appointmentsDAO.filterAppointment(filter);
-
-            // Gửi dữ liệu về JSP
-            request.setAttribute("appointments", appointments);
-            request.setAttribute("filter", filter);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            request.setAttribute("error", "Không thể tra cứu lịch hẹn.");
-        }
-
-        request.getRequestDispatcher("lookup_appointments.jsp").forward(request, response);
 
     }
 

@@ -82,149 +82,92 @@ public class ScheduleDao extends DBContext {
 
     public List<Schedules> filterSchedules(ScheduleDto f) {
         List<Schedules> list = new ArrayList<>();
-        StringBuilder sql = new StringBuilder(("""
-        SELECT ScheduleID, DoctorID, DayOfWeek, StartTime, EndTime,
-               IsAvailable, MaxAppointments, ValidFrom, ValidTo,
-               RequiresApproval, IsApproved, ApprovedBy, ApprovedDate, CreatedDate FROM dbo.Schedules WHERE 1=1"""));
+
+        StringBuilder sql = new StringBuilder("""
+            SELECT [ScheduleID], [DoctorID], [DayOfWeek], [StartTime], [EndTime],
+                   [IsAvailable], [MaxAppointments], [ValidFrom], [ValidTo],
+                   [RequiresApproval], [IsApproved], [ApprovedBy],
+                   [ApprovedDate], [CreatedDate]
+            FROM [dbo].[Schedules]
+            WHERE 1=1
+        """);
+
+        List<Object> params = new ArrayList<>();
+
+        // ====== Điều kiện lọc linh hoạt ======
         if (f.getDoctorId() != null) {
-            sql.append(" AND DoctorID = ?\n");
+            sql.append(" AND DoctorID = ?");
+            params.add(f.getDoctorId());
         }
         if (f.getDayOfWeek() != null) {
-            sql.append(" AND DayOfWeek = ?\n");
+            sql.append(" AND DayOfWeek = ?");
+            params.add(f.getDayOfWeek());
         }
         if (f.getStartTime() != null) {
-            sql.append(" AND StartTime >= ?\n");
+            sql.append(" AND StartTime >= CAST(? AS time(0))");
+            params.add(f.getStartTime());
         }
         if (f.getEndTime() != null) {
-            sql.append(" AND EndTime <= ?\n");
+            sql.append(" AND EndTime <= CAST(? AS time(0))");
+            params.add(f.getEndTime());
         }
         if (f.getIsAvailable() != null) {
-            sql.append(" AND IsAvailable = ?\n");
+            sql.append(" AND IsAvailable = ?");
+            params.add(f.getIsAvailable());
         }
-        if (f.getMaxAppointment() != null) {
-            sql.append(" AND MaxAppointments >= ?\n");
-        }
-        if (f.getValidFrom() != null) {
-            sql.append(" AND ValidFrom >= ?\n");
-        }
-        if (f.getValidTo() != null) {
-            sql.append(" AND ValidTo <= ?\n");
-        }
-        if (f.getRequiresApproval() != null) {
-            sql.append(" AND RequiresApproval = ?\n");
-        }
-        if (f.getIsApproved() != null) {
-            sql.append(" AND IsApproved = ?\n");
-        }
-        if (f.getApprovedBy() != null) {
-            sql.append(" AND ApprovedBy = ?\n");
-        }
-        if (f.getApprovedDate() != null) {
-            sql.append(" AND ApprovedDate >= ?\n");
-        }
-        if (f.getCreatedDate() != null) {
-            sql.append(" AND CreatedDate >= ?\n");
-        }
-        if (f.isSortMode()) {
-            sql.append(" ORDER BY ScheduleID ASC\n");
-        }
+
+        // ====== Sắp xếp & phân trang ======
+        sql.append(" ORDER BY ScheduleID ");
+        sql.append(f.isSortMode() ? "ASC" : "DESC");
+
         if (f.isPaginationMode()) {
-            if (!f.isSortMode()) {
-                sql.append(" ORDER BY ScheduleID ASC\n");
-            }
+            int offset = (f.getPage() - 1) * f.getSize();
             sql.append(" OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+            params.add(offset);
+            params.add(f.getSize());
         }
+
+        // ====== Thực thi ======
         try (Connection c = new DBContext().connection; PreparedStatement ps = c.prepareStatement(sql.toString())) {
 
-            int i = 1;
-            if (f.getDoctorId() != null) {
-                ps.setInt(i++, f.getDoctorId()); 
-            }
-            if (f.getDayOfWeek() != null) {
-                ps.setInt(i++, f.getDayOfWeek());
-            }
-            if (f.getStartTime() != null) {
-                ps.setTime(i++, f.getStartTime());
-            }
-            if (f.getEndTime() != null) {
-                ps.setTime(i++, f.getEndTime());
-            }
-            if (f.getIsAvailable() != null) {
-                ps.setBoolean(i++, f.getIsAvailable());
-            }
-            if (f.getMaxAppointment() != null) {
-                ps.setInt(i++, f.getMaxAppointment());
-            }
-            if (f.getValidFrom() != null) {
-                ps.setDate(i++, new java.sql.Date(f.getValidFrom().getTime()));
-            }
-            if (f.getValidTo() != null) {
-                ps.setDate(i++, new java.sql.Date(f.getValidTo().getTime()));
-            }
-            if (f.getRequiresApproval() != null) {
-                ps.setBoolean(i++, f.getRequiresApproval());
-            }
-            if (f.getIsApproved() != null) {
-                ps.setBoolean(i++, f.getIsApproved());
-            }
-            if (f.getApprovedBy() != null) {
-                ps.setInt(i++, f.getApprovedBy());
-            }
-            if (f.getApprovedDate() != null) {
-                ps.setTimestamp(i++, f.getApprovedDate());
-            }
-            if (f.getCreatedDate() != null) {
-                ps.setTimestamp(i++, f.getCreatedDate());
-            }
-
-            if (f.isPaginationMode()) {
-                int page = Math.max(1, f.getPage());
-                int size = Math.max(1, f.getSize());
-                ps.setInt(i++, (page - 1) * size);
-                ps.setInt(i++, size);
+            for (int i = 0; i < params.size(); i++) {
+                ps.setObject(i + 1, params.get(i));
             }
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    list.add(mapRow(rs));
+                    Schedules s = new Schedules();
+                    s.setScheduleId(rs.getInt("ScheduleID"));
+
+                    Doctor d = new Doctor();
+                    d.setDoctorID(rs.getInt("DoctorID"));
+                    s.setDoctorId(d);
+
+                    s.setDayOfWeek(rs.getInt("DayOfWeek"));
+                    s.setStartTime(rs.getTime("StartTime"));
+                    s.setEndTime(rs.getTime("EndTime"));
+                    s.setIsAvailable(rs.getBoolean("IsAvailable"));
+                    s.setMaxAppointments(rs.getInt("MaxAppointments"));
+                    s.setValidFrom(rs.getDate("ValidFrom"));
+                    s.setValidTo(rs.getDate("ValidTo"));
+                    s.setRequiresApproval(rs.getBoolean("RequiresApproval"));
+                    s.setIsApproved(rs.getBoolean("IsApproved"));
+
+                    Users u = new Users();
+                    u.setUserId(rs.getInt("ApprovedBy"));
+                    s.setApprovedBy(u);
+
+                    s.setApprovedDate(rs.getTimestamp("ApprovedDate"));
+                    s.setCreatedDate(rs.getTimestamp("CreatedDate"));
+                    list.add(s);
                 }
             }
-        } catch (Exception e) {
+
+        } catch (SQLException e) {
             e.printStackTrace();
         }
 
         return list;
-    }
-
-    private Schedules mapRow(ResultSet rs) throws SQLException {
-        Schedules s = new Schedules();
-        s.setScheduleId(rs.getInt("ScheduleID"));
-        Object docIdObj = rs.getObject("DoctorID");
-        if (docIdObj != null) {
-            Doctor d = new Doctor();
-            d.setDoctorID((Integer) docIdObj);
-            s.setDoctorId(d);
-        }
-        s.setDayOfWeek(rs.getInt("DayOfWeek"));
-        s.setStartTime(rs.getTime("StartTime"));
-        s.setEndTime(rs.getTime("EndTime"));
-        s.setIsAvailable(rs.getBoolean("IsAvailable"));
-        s.setMaxAppointments(rs.getInt("MaxAppointments"));
-        s.setValidFrom(rs.getDate("ValidFrom"));
-        s.setValidTo(rs.getDate("ValidTo"));
-        s.setRequiresApproval(rs.getBoolean("RequiresApproval"));
-        s.setIsApproved(rs.getBoolean("IsApproved"));
-
-        Object apByObj = rs.getObject("ApprovedBy");
-        if (apByObj != null) {
-            Users u = new Users();
-            u.setUserId((Integer) apByObj);
-            s.setApprovedBy(u);
-        }
-
-        s.setApprovedDate(rs.getTimestamp("ApprovedDate"));
-        s.setCreatedDate(rs.getTimestamp("CreatedDate"));
-        return s;
     }
 
 }

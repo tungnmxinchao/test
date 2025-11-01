@@ -26,6 +26,7 @@ public class AppointmentDto {
     private String patientName;
     private String phoneNumber;
     private String doctorName;
+    private String serviceName;
 
     private boolean paginationMode = true;
     private boolean sortMode = false;
@@ -35,7 +36,7 @@ public class AppointmentDto {
     public AppointmentDto() {
     }
 
-    public AppointmentDto(Integer patientId, Integer doctorId, Integer serviceId, Date appointmentDate, Date appointmentDateFrom, Date appointmentDateTo, Time startTime, Time endTime, String status, Date createdDate, String patientName, String phoneNumber, String doctorName) {
+    public AppointmentDto(Integer patientId, Integer doctorId, Integer serviceId, Date appointmentDate, Date appointmentDateFrom, Date appointmentDateTo, Time startTime, Time endTime, String status, Date createdDate, String patientName, String phoneNumber, String doctorName, String serviceName) {
         this.patientId = patientId;
         this.doctorId = doctorId;
         this.serviceId = serviceId;
@@ -49,6 +50,7 @@ public class AppointmentDto {
         this.patientName = patientName;
         this.phoneNumber = phoneNumber;
         this.doctorName = doctorName;
+        this.serviceName = serviceName;
     }
 
     public Integer getPatientId() {
@@ -155,6 +157,14 @@ public class AppointmentDto {
         this.doctorName = doctorName;
     }
 
+    public String getServiceName() {
+        return serviceName;
+    }
+
+    public void setServiceName(String serviceName) {
+        this.serviceName = serviceName;
+    }
+
     public boolean isPaginationMode() {
         return paginationMode;
     }
@@ -186,8 +196,7 @@ public class AppointmentDto {
     public void setSize(int size) {
         this.size = size;
     }
-    
-    
 
     
+
 }
