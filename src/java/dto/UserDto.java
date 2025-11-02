@@ -2,20 +2,11 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package model;
-
-/**
- *
- * @author Nguyen Dinh Giap
- */
+package dto;
 import java.sql.Date;
 
-public class Users {
 
-    private int userId;
-    private String userName;
-    private String passWord;
-    private String email;
+public class UserDto {
     private String fullName;
     private String phoneNumber;
     private Date dateOfBirth;
@@ -23,17 +14,16 @@ public class Users {
     private String address;
     private String role;
     private Boolean isActive;
-    private Date createDate;
-    private String image;
 
-    public Users() {
+    private boolean sortMode = false;     // Bật/tắt sắp xếp
+    private boolean paginationMode = true; // Bật/tắt phân trang
+    private int page = 1;
+    private int size = 10;
+
+    public UserDto() {
     }
 
-    public Users(int userId, String userName, String passWord, String email, String fullName, String phoneNumber, Date dateOfBirth, String gender, String address, String role, Boolean isActive, Date createDate, String image) {
-        this.userId = userId;
-        this.userName = userName;
-        this.passWord = passWord;
-        this.email = email;
+    public UserDto(String fullName, String phoneNumber, Date dateOfBirth, String gender, String address, String role, Boolean isActive) {
         this.fullName = fullName;
         this.phoneNumber = phoneNumber;
         this.dateOfBirth = dateOfBirth;
@@ -41,40 +31,6 @@ public class Users {
         this.address = address;
         this.role = role;
         this.isActive = isActive;
-        this.createDate = createDate;
-        this.image = image;
-    }
-
-    public int getUserId() {
-        return userId;
-    }
-
-    public void setUserId(int userId) {
-        this.userId = userId;
-    }
-
-    public String getUserName() {
-        return userName;
-    }
-
-    public void setUserName(String userName) {
-        this.userName = userName;
-    }
-
-    public String getPassWord() {
-        return passWord;
-    }
-
-    public void setPassWord(String passWord) {
-        this.passWord = passWord;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
     }
 
     public String getFullName() {
@@ -133,24 +89,38 @@ public class Users {
         this.isActive = isActive;
     }
 
-    public Date getCreateDate() {
-        return createDate;
+    public boolean isSortMode() {
+        return sortMode;
     }
 
-    public void setCreateDate(Date createDate) {
-        this.createDate = createDate;
+    public void setSortMode(boolean sortMode) {
+        this.sortMode = sortMode;
     }
 
-    public String getImage() {
-        return image;
+    public boolean isPaginationMode() {
+        return paginationMode;
     }
 
-    public void setImage(String image) {
-        this.image = image;
+    public void setPaginationMode(boolean paginationMode) {
+        this.paginationMode = paginationMode;
+    }
+
+    public int getPage() {
+        return page;
+    }
+
+    public void setPage(int page) {
+        this.page = page;
+    }
+
+    public int getSize() {
+        return size;
+    }
+
+    public void setSize(int size) {
+        this.size = size;
     }
     
     
-
     
-
 }

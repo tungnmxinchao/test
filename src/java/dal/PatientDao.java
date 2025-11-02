@@ -56,13 +56,6 @@ public class PatientDao extends DBContext {
         return patients;
     }
 
-    /**
-     * Lấy thông tin bệnh nhân dựa trên UserID. Hàm này JOIN với bảng Users để
-     * lấy thông tin đầy đủ.
-     *
-     * @param userId ID của người dùng (lấy từ session).
-     * @return Một đối tượng Patients nếu tìm thấy, ngược lại trả về null.
-     */
     public Patients getPatientByUserId(int userId) {
         String sql = """
             SELECT 
@@ -124,6 +117,68 @@ public class PatientDao extends DBContext {
             e.printStackTrace();
             return null;
         }
+    }
+
+    public boolean updatePatient(Patients patient) {
+        String sql = """
+            UPDATE [dbo].[Patients]
+            SET [BloodType] = ?,
+                [Allergies] = ?,
+                [MedicalHistory] = ?,
+                [InsuranceInfo] = ?,
+                [EmergencyContactName] = ?,
+                [EmergencyContactPhone] = ?
+            WHERE [PatientID] = ?
+        """;
+
+        try (Connection con = new DBContext().connection; PreparedStatement ps = con.prepareStatement(sql)) {
+
+            // ===== Gán giá trị =====
+            if (patient.getBloodType() != null && !patient.getBloodType().isBlank()) {
+                ps.setString(1, patient.getBloodType());
+            } else {
+                ps.setNull(1, Types.NVARCHAR);
+            }
+
+            if (patient.getAllergies() != null && !patient.getAllergies().isBlank()) {
+                ps.setString(2, patient.getAllergies());
+            } else {
+                ps.setNull(2, Types.NVARCHAR);
+            }
+
+            if (patient.getMedicalHistory() != null && !patient.getMedicalHistory().isBlank()) {
+                ps.setString(3, patient.getMedicalHistory());
+            } else {
+                ps.setNull(3, Types.NVARCHAR);
+            }
+
+            if (patient.getInsuranceInfo() != null && !patient.getInsuranceInfo().isBlank()) {
+                ps.setString(4, patient.getInsuranceInfo());
+            } else {
+                ps.setNull(4, Types.NVARCHAR);
+            }
+
+            if (patient.getEmergencyContactName() != null && !patient.getEmergencyContactName().isBlank()) {
+                ps.setString(5, patient.getEmergencyContactName());
+            } else {
+                ps.setNull(5, Types.NVARCHAR);
+            }
+
+            if (patient.getEmergencyContactPhone() != null && !patient.getEmergencyContactPhone().isBlank()) {
+                ps.setString(6, patient.getEmergencyContactPhone());
+            } else {
+                ps.setNull(6, Types.NVARCHAR);
+            }
+
+            ps.setInt(7, patient.getPatientID());
+
+            int row = ps.executeUpdate();
+            return row > 0;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
 }

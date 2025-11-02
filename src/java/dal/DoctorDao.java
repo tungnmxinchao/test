@@ -19,6 +19,80 @@ public class DoctorDao extends DBContext {
     public DoctorDao() {
     }
 
+    public Doctor getDoctorByUserId(int userId) {
+        String sql = """
+            SELECT 
+                d.[DoctorID],
+                d.[UserID],
+                d.[Specialization],
+                d.[LicenseNumber],
+                d.[YearsOfExperience],
+                d.[Education],
+                d.[Biography],
+                d.[ConsultationFee],
+                u.[Username],
+                u.[PasswordHash],
+                u.[Email],
+                u.[FullName],
+                u.[PhoneNumber],
+                u.[DateOfBirth],
+                u.[Gender],
+                u.[Address],
+                u.[Role],
+                u.[IsActive],
+                u.[CreatedDate],
+                u.[Image]
+            FROM [dbo].[Doctors] d
+            JOIN [dbo].[Users] u ON d.[UserID] = u.[UserID]
+            WHERE d.[UserID] = ?
+        """;
+
+        try (Connection con = new DBContext().connection; PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, userId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Doctor doctor = new Doctor();
+                    doctor.setDoctorID(rs.getInt("DoctorID"));
+                    doctor.setSpecialization(rs.getString("Specialization"));
+                    doctor.setLicenseNumber(rs.getString("LicenseNumber"));
+                    doctor.setYearsOfExperience(rs.getInt("YearsOfExperience"));
+                    doctor.setEducation(rs.getString("Education"));
+                    doctor.setBiography(rs.getString("Biography"));
+                    doctor.setConsultationFee(rs.getBigDecimal("ConsultationFee"));
+
+                    // Khởi tạo Users object
+                    Users user = new Users();
+                    user.setUserId(rs.getInt("UserID"));
+                    user.setUserName(rs.getString("Username"));
+                    user.setPassWord(rs.getString("PasswordHash"));
+                    user.setEmail(rs.getString("Email"));
+                    user.setFullName(rs.getString("FullName"));
+                    user.setPhoneNumber(rs.getString("PhoneNumber"));
+                    user.setDateOfBirth(rs.getDate("DateOfBirth"));
+                    user.setGender(rs.getString("Gender"));
+                    user.setAddress(rs.getString("Address"));
+                    user.setRole(rs.getString("Role"));
+                    user.setIsActive(rs.getBoolean("IsActive"));
+                    user.setImage(rs.getString("Image"));
+
+                    Timestamp ts = rs.getTimestamp("CreatedDate");
+                    user.setCreateDate(ts == null ? null : new java.sql.Date(ts.getTime()));
+
+                    // Gắn user vào doctor
+                    doctor.setUserId(user);
+
+                    return doctor;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
     public int insertDoctor(Doctor doctor) {
         String sql = "INSERT INTO [dbo].[Doctors]\n"
                 + "           ([UserID]\n"

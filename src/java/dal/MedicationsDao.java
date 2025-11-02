@@ -167,4 +167,138 @@ public class MedicationsDao {
         return null; // không tìm thấy
     }
 
+    public int countFilter(MedicationDto dto) {
+        int count = 0;
+
+        StringBuilder sql = new StringBuilder("""
+            SELECT COUNT(*) AS total
+            FROM [dbo].[Medications] m
+            WHERE 1 = 1
+        """);
+
+        if (dto.getMedicationId() != null) {
+            sql.append(" AND m.MedicationID = ? ");
+        }
+        if (dto.getName() != null && !dto.getName().isBlank()) {
+            sql.append(" AND m.MedicationName LIKE ? ");
+        }
+        if (dto.getPriceFrom() != null) {
+            sql.append(" AND m.Price >= ? ");
+        }
+        if (dto.getPriceTo() != null) {
+            sql.append(" AND m.Price <= ? ");
+        }
+        if (dto.getExpiryDateFrom() != null) {
+            sql.append(" AND m.ExpiryDate >= ? ");
+        }
+        if (dto.getExpiryDateTo() != null) {
+            sql.append(" AND m.ExpiryDate <= ? ");
+        }
+        if (dto.getManufacturer() != null && !dto.getManufacturer().isBlank()) {
+            sql.append(" AND m.Manufacturer LIKE ? ");
+        }
+        if (dto.getIsActive() != null) {
+            sql.append(" AND m.IsActive = ? ");
+        }
+
+        try (Connection conn = new DBContext().connection; PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+
+            int i = 1;
+            if (dto.getMedicationId() != null) {
+                ps.setInt(i++, dto.getMedicationId());
+            }
+            if (dto.getName() != null && !dto.getName().isBlank()) {
+                ps.setString(i++, "%" + dto.getName().trim() + "%");
+            }
+            if (dto.getPriceFrom() != null) {
+                ps.setBigDecimal(i++, dto.getPriceFrom());
+            }
+            if (dto.getPriceTo() != null) {
+                ps.setBigDecimal(i++, dto.getPriceTo());
+            }
+            if (dto.getExpiryDateFrom() != null) {
+                ps.setDate(i++, dto.getExpiryDateFrom());
+            }
+            if (dto.getExpiryDateTo() != null) {
+                ps.setDate(i++, dto.getExpiryDateTo());
+            }
+            if (dto.getManufacturer() != null && !dto.getManufacturer().isBlank()) {
+                ps.setString(i++, "%" + dto.getManufacturer().trim() + "%");
+            }
+            if (dto.getIsActive() != null) {
+                ps.setBoolean(i++, dto.getIsActive());
+            }
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    count = rs.getInt("total");
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return count;
+    }
+
+    public boolean insertMedication(Medications m) {
+        String sql = """
+            INSERT INTO [dbo].[Medications]
+                ([MedicationName], [Description], [Price], [StockQuantity], [ExpiryDate], [Manufacturer], [IsActive])
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """;
+
+        try (Connection conn = new DBContext().connection; PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, m.getMedicationName());
+            ps.setString(2, m.getDescription());
+            ps.setBigDecimal(3, m.getPrice());
+            ps.setInt(4, m.getStockQuantity());
+            ps.setDate(5, m.getExpiryDate());
+            ps.setString(6, m.getManufacturer());
+            ps.setBoolean(7, m.isIsActive());
+
+            return ps.executeUpdate() > 0;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+ 
+    public boolean updateMedication(Medications m) {
+        String sql = """
+            UPDATE [dbo].[Medications]
+            SET
+                [MedicationName] = ?,
+                [Description] = ?,
+                [Price] = ?,
+                [StockQuantity] = ?,
+                [ExpiryDate] = ?,
+                [Manufacturer] = ?,
+                [IsActive] = ?
+            WHERE [MedicationID] = ?
+        """;
+
+        try (Connection conn = new DBContext().connection; PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, m.getMedicationName());
+            ps.setString(2, m.getDescription());
+            ps.setBigDecimal(3, m.getPrice());
+            ps.setInt(4, m.getStockQuantity());
+            ps.setDate(5, m.getExpiryDate());
+            ps.setString(6, m.getManufacturer());
+            ps.setBoolean(7, m.isIsActive());
+            ps.setInt(8, m.getMedicationId());
+
+            return ps.executeUpdate() > 0;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
 }
