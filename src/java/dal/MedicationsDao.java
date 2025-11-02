@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import model.Medications;
 import java.sql.*;
+
 /**
  *
  * @author TNO
@@ -129,6 +130,41 @@ public class MedicationsDao {
         m.setIsActive(rs.getBoolean("IsActive"));         // boolean
         return m;
     }
-    
-    
+
+    public Medications getMedicationById(Integer medicationId) {
+        if (medicationId == null) {
+            return null;
+        }
+
+        String sql = """
+        SELECT
+            m.[MedicationID],
+            m.[MedicationName],
+            m.[Description],
+            m.[Price],
+            m.[StockQuantity],
+            m.[ExpiryDate],
+            m.[Manufacturer],
+            m.[IsActive]
+        FROM [dbo].[Medications] m
+        WHERE m.MedicationID = ?
+    """;
+
+        try (Connection conn = new DBContext().connection; PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, medicationId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapRow(rs); // dùng lại phương thức mapRow
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null; // không tìm thấy
+    }
+
 }

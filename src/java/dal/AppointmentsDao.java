@@ -119,7 +119,12 @@ public class AppointmentsDao extends DBContext {
             ap.UpdatedDate,
             u_patient.FullName AS PatientName,
             u_patient.PhoneNumber AS PatientPhone,
+            u_patient.DateOfBirth AS PatientDOB,
+            u_patient.Gender AS PatientGender,
+            u_patient.Address AS PatientAddress,
             u_doctor.FullName AS DoctorName,
+            d.Specialization AS DoctorSpecialization,
+            d.ConsultationFee AS DoctorConsultationFee,
             s.ServiceName
         FROM dbo.Appointments ap
         JOIN dbo.Patients p ON ap.PatientID = p.PatientID
@@ -136,7 +141,7 @@ public class AppointmentsDao extends DBContext {
 
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    return mapRowWithJoin(rs); // dùng hàm ánh xạ đầy đủ
+                    return mapRowWithJoin(rs);
                 }
             }
 
@@ -147,6 +152,7 @@ public class AppointmentsDao extends DBContext {
         return null;
     }
 
+    // Lọc danh sách lịch hẹn
     public List<Appointments> filterAppointment(AppointmentDto a) {
         List<Appointments> list = new ArrayList<>();
 
@@ -163,46 +169,50 @@ public class AppointmentsDao extends DBContext {
             ap.Notes,
             ap.CreatedDate,
             ap.UpdatedDate,
-            u_patient.FullName   AS PatientName,
+            u_patient.FullName AS PatientName,
             u_patient.PhoneNumber AS PatientPhone,
-            u_doctor.FullName    AS DoctorName,
+            u_patient.DateOfBirth AS PatientDOB,
+            u_patient.Gender AS PatientGender,
+            u_patient.Address AS PatientAddress,
+            u_doctor.FullName AS DoctorName,
+            d.Specialization AS DoctorSpecialization,
+            d.ConsultationFee AS DoctorConsultationFee,
             s.ServiceName
         FROM dbo.Appointments ap
         JOIN dbo.Patients p      ON ap.PatientID = p.PatientID
-        JOIN dbo.Users u_patient ON p.UserID     = u_patient.UserID
+        JOIN dbo.Users u_patient ON p.UserID = u_patient.UserID
         JOIN dbo.Doctors d       ON ap.DoctorID  = d.DoctorID
         JOIN dbo.Users u_doctor  ON d.UserID     = u_doctor.UserID
         JOIN dbo.Services s      ON ap.ServiceID = s.ServiceID
         WHERE 1=1
     """);
 
-        // ====== Lọc theo ID (cứng) ======
+        // ===== Lọc theo ID =====
         if (a.getPatientId() != null) {
             sql.append(" AND ap.PatientID = ? ");
         }
         if (a.getDoctorId() != null) {
-            sql.append(" AND ap.DoctorID  = ? ");
+            sql.append(" AND ap.DoctorID = ? ");
         }
         if (a.getServiceId() != null) {
             sql.append(" AND ap.ServiceID = ? ");
         }
 
-        // ====== Lọc mềm (LIKE theo tên/SDT) ======
+        // ===== Lọc mềm (LIKE) =====
         if (a.getPatientName() != null && !a.getPatientName().isBlank()) {
-            sql.append(" AND u_patient.FullName   LIKE ? ");
+            sql.append(" AND u_patient.FullName LIKE ? ");
         }
         if (a.getPhoneNumber() != null && !a.getPhoneNumber().isBlank()) {
             sql.append(" AND u_patient.PhoneNumber LIKE ? ");
         }
         if (a.getDoctorName() != null && !a.getDoctorName().isBlank()) {
-            sql.append(" AND u_doctor.FullName    LIKE ? ");
+            sql.append(" AND u_doctor.FullName LIKE ? ");
         }
-        // NEW: tìm theo tên dịch vụ
         if (a.getServiceName() != null && !a.getServiceName().isBlank()) {
-            sql.append(" AND s.ServiceName        LIKE ? ");
+            sql.append(" AND s.ServiceName LIKE ? ");
         }
 
-        // ====== Lọc theo ngày ======
+        // ===== Lọc theo ngày =====
         if (a.getAppointmentDate() != null) {
             sql.append(" AND ap.AppointmentDate = ? ");
         } else {
@@ -214,19 +224,19 @@ public class AppointmentsDao extends DBContext {
             }
         }
 
-        // ====== Trạng thái ======
+        // ===== Trạng thái =====
         if (a.getStatus() != null && !a.getStatus().isBlank()) {
             sql.append(" AND ap.Status = ? ");
         }
 
-        // ====== Sắp xếp ======
+        // ===== Sắp xếp =====
         if (a.isSortMode()) {
             sql.append(" ORDER BY ap.AppointmentDate DESC, ap.StartTime ASC ");
         } else {
             sql.append(" ORDER BY ap.AppointmentDate DESC ");
         }
 
-        // ====== Phân trang ======
+        // ===== Phân trang =====
         if (a.isPaginationMode()) {
             sql.append(" OFFSET ? ROWS FETCH NEXT ? ROWS ONLY ");
         }
@@ -235,7 +245,6 @@ public class AppointmentsDao extends DBContext {
 
             int i = 1;
 
-            // ---- set tham số ID
             if (a.getPatientId() != null) {
                 ps.setInt(i++, a.getPatientId());
             }
@@ -246,7 +255,6 @@ public class AppointmentsDao extends DBContext {
                 ps.setInt(i++, a.getServiceId());
             }
 
-            // ---- set tham số LIKE (mềm)
             if (a.getPatientName() != null && !a.getPatientName().isBlank()) {
                 ps.setString(i++, "%" + a.getPatientName().trim() + "%");
             }
@@ -260,7 +268,6 @@ public class AppointmentsDao extends DBContext {
                 ps.setString(i++, "%" + a.getServiceName().trim() + "%");
             }
 
-            // ---- set tham số ngày
             if (a.getAppointmentDate() != null) {
                 ps.setDate(i++, a.getAppointmentDate());
             } else {
@@ -272,12 +279,10 @@ public class AppointmentsDao extends DBContext {
                 }
             }
 
-            // ---- set trạng thái
             if (a.getStatus() != null && !a.getStatus().isBlank()) {
                 ps.setString(i++, a.getStatus().trim());
             }
 
-            // ---- set phân trang
             if (a.isPaginationMode()) {
                 int page = Math.max(a.getPage(), 1);
                 int size = Math.max(a.getSize(), 1);
@@ -287,9 +292,10 @@ public class AppointmentsDao extends DBContext {
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    list.add(mapRowWithJoin(rs)); // giữ nguyên mapper của bạn
+                    list.add(mapRowWithJoin(rs));
                 }
             }
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -309,18 +315,15 @@ public class AppointmentsDao extends DBContext {
         WHERE 1=1
     """);
 
-        // ====== Lọc theo ID (cứng) ======
         if (a.getPatientId() != null) {
             sql.append(" AND ap.PatientID = ? ");
         }
         if (a.getDoctorId() != null) {
-            sql.append(" AND ap.DoctorID  = ? ");
+            sql.append(" AND ap.DoctorID = ? ");
         }
         if (a.getServiceId() != null) {
             sql.append(" AND ap.ServiceID = ? ");
         }
-
-        // ====== Lọc mềm (LIKE theo tên/SDT/Dịch vụ) ======
         if (a.getPatientName() != null && !a.getPatientName().isBlank()) {
             sql.append(" AND u_patient.FullName LIKE ? ");
         }
@@ -334,7 +337,6 @@ public class AppointmentsDao extends DBContext {
             sql.append(" AND s.ServiceName LIKE ? ");
         }
 
-        // ====== Lọc theo ngày ======
         if (a.getAppointmentDate() != null) {
             sql.append(" AND ap.AppointmentDate = ? ");
         } else {
@@ -346,7 +348,6 @@ public class AppointmentsDao extends DBContext {
             }
         }
 
-        // ====== Lọc theo trạng thái ======
         if (a.getStatus() != null && !a.getStatus().isBlank()) {
             sql.append(" AND ap.Status = ? ");
         }
@@ -355,7 +356,6 @@ public class AppointmentsDao extends DBContext {
 
             int i = 1;
 
-            // ---- set tham số ID
             if (a.getPatientId() != null) {
                 ps.setInt(i++, a.getPatientId());
             }
@@ -366,7 +366,6 @@ public class AppointmentsDao extends DBContext {
                 ps.setInt(i++, a.getServiceId());
             }
 
-            // ---- set tham số LIKE (mềm)
             if (a.getPatientName() != null && !a.getPatientName().isBlank()) {
                 ps.setString(i++, "%" + a.getPatientName().trim() + "%");
             }
@@ -380,7 +379,6 @@ public class AppointmentsDao extends DBContext {
                 ps.setString(i++, "%" + a.getServiceName().trim() + "%");
             }
 
-            // ---- set tham số ngày
             if (a.getAppointmentDate() != null) {
                 ps.setDate(i++, a.getAppointmentDate());
             } else {
@@ -392,7 +390,6 @@ public class AppointmentsDao extends DBContext {
                 }
             }
 
-            // ---- set trạng thái
             if (a.getStatus() != null && !a.getStatus().isBlank()) {
                 ps.setString(i++, a.getStatus().trim());
             }
@@ -402,6 +399,7 @@ public class AppointmentsDao extends DBContext {
                     return rs.getInt(1);
                 }
             }
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -427,6 +425,9 @@ public class AppointmentsDao extends DBContext {
         Users uPatient = new Users();
         uPatient.setFullName(rs.getString("PatientName"));
         uPatient.setPhoneNumber(rs.getString("PatientPhone"));
+        uPatient.setDateOfBirth(rs.getDate("PatientDOB"));
+        uPatient.setGender(rs.getString("PatientGender"));
+        uPatient.setAddress(rs.getString("PatientAddress"));
         patient.setUserID(uPatient);
         appointment.setPatientId(patient);
 
@@ -436,6 +437,8 @@ public class AppointmentsDao extends DBContext {
         Users uDoctor = new Users();
         uDoctor.setFullName(rs.getString("DoctorName"));
         doctor.setUserId(uDoctor);
+        doctor.setSpecialization(rs.getString("DoctorSpecialization"));
+        doctor.setConsultationFee(rs.getBigDecimal("DoctorConsultationFee"));
         appointment.setDoctorId(doctor);
 
         // Service

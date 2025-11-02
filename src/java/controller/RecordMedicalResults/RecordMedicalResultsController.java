@@ -4,11 +4,12 @@ package controller.RecordMedicalResults;
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
  */
-
+import dal.AppointmentServicesDao;
 import dal.AppointmentsDao;
 import dal.MedicalRecordDao;
 import dal.MedicationsDao;
 import dal.PrescriptionDao;
+import dal.ServiceDao;
 import dto.MedicationDto;
 import java.io.IOException;
 import jakarta.servlet.ServletException;
@@ -25,6 +26,9 @@ import model.MedicalRecords;
 import model.PrescriptionDetails;
 import model.Prescriptions;
 import java.sql.Time;
+import model.AppointmentServices;
+import model.Service;
+
 /**
  *
  * @author TNO
@@ -66,11 +70,15 @@ public class RecordMedicalResultsController extends HttpServlet {
         List<Medications> medicationList = medicationDAO.filterMedications(mDto);
         // -----------------------
 
+        ServiceDao serviceDAO = new ServiceDao();
+        List<Service> services = serviceDAO.getAllServices();
+        request.setAttribute("services", services);
+
         // Gửi dữ liệu sang JSP
         request.setAttribute("appointment", appointment);
         request.setAttribute("medications", medicationList);
 
-        request.getRequestDispatcher("record-medical.jsp").forward(request, response);
+        request.getRequestDispatcher("/views/doctor/record-medical.jsp").forward(request, response);
 
     }
 
@@ -101,7 +109,6 @@ public class RecordMedicalResultsController extends HttpServlet {
             String followUpDateStr = trimOrNull(request.getParameter("followUpDate"));
 
             // Tối thiểu: chẩn đoán/symptoms có thể yêu cầu theo business rule của bạn
-
             MedicalRecords mr = new MedicalRecords();
             // set appointment vào record
             Appointments apRef = new Appointments();
@@ -213,6 +220,33 @@ public class RecordMedicalResultsController extends HttpServlet {
             ap.setEndTime(new Time(System.currentTimeMillis()));
             // có thể set notes nếu muốn:
             // ap.setNotes("Đã ghi hồ sơ & kê đơn");
+
+            // -------- 4) Insert các dịch vụ tùy chọn --------
+            String[] extraServiceIds = request.getParameterValues("extraServiceIds");
+            String extraServiceNotes = trimOrNull(request.getParameter("extraServiceNotes"));
+            if (extraServiceIds != null) {
+                AppointmentServicesDao serviceDAO = new AppointmentServicesDao();
+                for (String serviceIdStr : extraServiceIds) {
+                    if (serviceIdStr == null || serviceIdStr.isBlank()) {
+                        continue;
+                    }
+                    int serviceId = Integer.parseInt(serviceIdStr);
+                    AppointmentServices appService = new model.AppointmentServices();
+                    Appointments aRef = new Appointments();
+                    aRef.setAppointmentId(appointmentId);
+                    appService.setAppointmentId(aRef);
+
+                    Service sRef = new Service();
+                    sRef.setServiceId(serviceId);
+                    appService.setServiceId(sRef);
+
+                    appService.setNotes(extraServiceNotes);
+                    int insertApSer = serviceDAO.insertAppointmentService(appService);
+                     if(insertApSer == -1) {
+                         throw new Exception("Lỗi khi thêm các dịch vụ tùy chọn");
+                     }
+                }
+            }
 
             boolean updated = appointmentDAO.updateAppointment(ap);
             if (!updated) {

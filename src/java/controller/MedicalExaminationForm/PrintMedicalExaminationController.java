@@ -24,7 +24,7 @@ public class PrintMedicalExaminationController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        String idParam = request.getParameter("id");
+        String idParam = request.getParameter("appointmentId");
         if (idParam == null) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Thiếu mã lịch hẹn.");
             return;
@@ -52,7 +52,7 @@ public class PrintMedicalExaminationController extends HttpServlet {
 
         // Gửi dữ liệu sang JSP
         request.setAttribute("appointment", appointment);
-        request.getRequestDispatcher("appointment-print.jsp").forward(request, response);
+        request.getRequestDispatcher("/views/receptionist/appointment-print.jsp").forward(request, response);
 
     }
 

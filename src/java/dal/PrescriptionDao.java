@@ -299,4 +299,57 @@ public class PrescriptionDao {
         return -1;
     }
 
+    public List<PrescriptionDetails> filterByPrescriptionId(int prescriptionId) {
+        List<PrescriptionDetails> list = new ArrayList<>();
+        String sql = "SELECT pd.PrescriptionDetailID, pd.Dosage, pd.Quantity, pd.Duration, "
+                + "m.MedicationID, m.MedicationName, m.Price, m.StockQuantity, m.ExpiryDate, m.Manufacturer, m.IsActive, "
+                + "p.PrescriptionID, p.IssueDate, p.Instructions "
+                + "FROM PrescriptionDetails pd "
+                + "JOIN Medications m ON pd.MedicationID = m.MedicationID "
+                + "JOIN Prescriptions p ON pd.PrescriptionID = p.PrescriptionID "
+                + "WHERE pd.PrescriptionID = ?";
+
+        try (Connection conn = new DBContext().connection; PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, prescriptionId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    PrescriptionDetails pd = new PrescriptionDetails();
+                    pd.setPrescriptionDetailId(rs.getInt("PrescriptionDetailID"));
+
+                    // Prescription
+                    Prescriptions pres = new Prescriptions();
+                    pres.setPrescriptionId(rs.getInt("PrescriptionID"));
+                    pres.setIssueDate(rs.getTimestamp("IssueDate"));
+                    pres.setInstructions(rs.getString("Instructions"));
+                    pd.setPrescriptionId(pres);
+
+                    // Medication
+                    Medications med = new Medications();
+                    med.setMedicationId(rs.getInt("MedicationID"));
+                    med.setMedicationName(rs.getString("MedicationName"));
+                    med.setPrice(rs.getBigDecimal("Price"));
+                    med.setStockQuantity(rs.getInt("StockQuantity"));
+                    med.setExpiryDate(rs.getDate("ExpiryDate"));
+                    med.setManufacturer(rs.getString("Manufacturer"));
+                    med.setIsActive(rs.getBoolean("IsActive"));
+                    pd.setMedications(med);
+
+                    // Chi tiết kê đơn
+                    pd.setDosage(rs.getString("Dosage"));
+                    pd.setQuantity(rs.getInt("Quantity"));
+                    pd.setDuration(rs.getString("Duration"));
+
+                    list.add(pd);
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
 }

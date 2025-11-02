@@ -295,6 +295,16 @@ body {
     background: #bbdefb;
 }
 
+/* Nút In phiếu khám */
+.data-table .btn-print {
+    background: #fff3cd; /* vàng nhạt */
+    color: #856404;
+    border: 1px solid #ffeeba;
+}
+.data-table .btn-print:hover {
+    background: #ffe8a1;
+}
+
 /* Nút “Xác nhận / Check-in” */
 .data-table .btn-checkin {
     background: #e8f5e9;

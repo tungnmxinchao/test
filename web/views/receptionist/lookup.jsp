@@ -109,6 +109,14 @@
                                                     <input type="hidden" name="appointmentId" value="${a.appointmentId}">
                                                     <button type="submit" class="btn btn-detail">Chi tiết</button>
                                                 </form>
+
+                                                <form action="${pageContext.request.contextPath}/printMedicalExamination" method="get" style="display:inline;">
+                                                    <input type="hidden" name="appointmentId" value="${a.appointmentId}">
+                                                    <button type="submit" class="btn btn-print"
+                                                            ${a.status != 'Confirmed' ? 'disabled' : ''}>
+                                                        In phiếu khám
+                                                    </button>
+                                                </form>
                                             </td>
                                         </tr>
                                     </c:forEach>
