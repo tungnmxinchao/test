@@ -219,7 +219,7 @@ public class DoctorDao extends DBContext {
                     // chú ý: getBoolean trả false khi NULL; nếu cần phân biệt null -> dùng getObject
                     user.setIsActive(rs.getObject("u_IsActive") == null ? null : rs.getBoolean("u_IsActive"));
                     user.setCreateDate(rs.getDate("u_CreatedDate"));
-                     user.setImage(rs.getString("image"));
+                    user.setImage(rs.getString("image"));
 
                     doctor.setUserId(user);
 

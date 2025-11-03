@@ -16,6 +16,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.util.List;
 import model.Appointments;
 import java.sql.*;
@@ -23,6 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 import model.MedicalRecords;
 import model.Prescriptions;
+import utils.SessionUtils;
 
 /**
  *
@@ -40,18 +42,28 @@ public class MedicalHistoryController extends HttpServlet {
             throws ServletException, IOException {
 
         try {
-            //Giả định bệnh nhân hiện tại (TODO: sau này lấy từ session)
-            int patientId = 1; // TODO: lấy từ session
+            HttpSession session = req.getSession(false);
+            if (session == null) {
+                resp.sendRedirect("login");
+                return;
+            }
+
+            // Lấy patientId từ session
+            int patientId = SessionUtils.getPatientId(session);
+            if (patientId <= 0) {
+                resp.sendRedirect("login");
+                return;
+            }
 
             String status = req.getParameter("status");
             String doctorId = req.getParameter("doctorId");
             String serviceId = req.getParameter("serviceId");
-            String doctorName = req.getParameter("doctorName");   // <-- NEW
-            String serviceName = req.getParameter("serviceName");  // <-- NEW
+            String doctorName = req.getParameter("doctorName");   
+            String serviceName = req.getParameter("serviceName");  //
             String fromDate = req.getParameter("fromDate");
             String toDate = req.getParameter("toDate");
             String pageStr = req.getParameter("page");
-            String sizeStr = req.getParameter("size");         // <-- NEW
+            String sizeStr = req.getParameter("size");        
 
             AppointmentDto filter = new AppointmentDto();
             filter.setPatientId(patientId);
