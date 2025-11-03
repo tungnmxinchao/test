@@ -4,10 +4,8 @@
  */
 package controller.BookAppointment;
 
-import dal.AppointmentsDao;
 import dal.ScheduleDao;
 import dal.ScheduleExceptionsDao;
-import dto.AppointmentDto;
 import dto.ScheduleDto;
 import dto.ScheduleExceptionsDto;
 import java.io.IOException;
@@ -23,7 +21,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import model.Appointments;
 import model.ScheduleExceptions;
 import model.Schedules;
 
@@ -38,7 +35,7 @@ public class DoctorWorkScheduleController extends HttpServlet {
             int doctorId = Integer.parseInt(req.getParameter("doctorId"));
             int serviceId = Integer.parseInt(req.getParameter("serviceId"));
 
-            // Tuần cần hiển thị: mặc định tuần hiện tại; có thể dịch chuyển bằng ?weekOffset=-1/0/1...
+            // Tuần hiển thị: mặc định tuần hiện tại; có thể chỉnh bằng ?weekOffset=-1/0/1...
             int weekOffset = 0;
             try {
                 String off = req.getParameter("weekOffset");
@@ -54,7 +51,6 @@ public class DoctorWorkScheduleController extends HttpServlet {
 
             ScheduleDao scheduleDAO = new ScheduleDao();
             ScheduleExceptionsDao exDao = new ScheduleExceptionsDao();
-            AppointmentsDao appDao = new AppointmentsDao();
 
             // Cache base schedules theo dayOfWeek (1..7)
             Map<Integer, List<Schedules>> baseByDow = new HashMap<>();
@@ -106,35 +102,12 @@ public class DoctorWorkScheduleController extends HttpServlet {
                         afterEx.add(s);
                     }
                 }
-                if (afterEx.isEmpty()) {
-                    availableByDate.put(d, List.of());
-                    continue;
-                }
 
-                // Appointments đã CONFIRMED trong ngày d
-                AppointmentDto appF = new AppointmentDto();
-                appF.setDoctorId(doctorId);
-                appF.setAppointmentDate(java.sql.Date.valueOf(d));
-                appF.setStatus("CONFIRMED");
-                List<Appointments> booked = appDao.filterAppointment(appF);
-
-                // Loại slot đã bị đặt chồng
-                List<Schedules> finalSlots = new ArrayList<>();
-                for (Schedules s : afterEx) {
-                    boolean bookedOverlap = booked.stream().anyMatch(a
-                            -> s.getStartTime().before(a.getEndTime())
-                            && s.getEndTime().after(a.getStartTime())
-                    );
-                    if (!bookedOverlap) {
-                        finalSlots.add(s);
-                    }
-                }
-
-                finalSlots.sort(Comparator.comparing(Schedules::getStartTime));
-                availableByDate.put(d, finalSlots);
+                afterEx.sort(Comparator.comparing(Schedules::getStartTime));
+                availableByDate.put(d, afterEx);
             }
 
-            req.setAttribute("availableByDate", availableByDate); // Map<LocalDate, List<Schedules>>
+            req.setAttribute("availableByDate", availableByDate);
             req.setAttribute("doctorId", doctorId);
             req.setAttribute("serviceId", serviceId);
             req.setAttribute("monday", monday);
