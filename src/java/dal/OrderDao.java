@@ -129,43 +129,6 @@ public class OrderDao {
         return -1; // Nếu thất bại
     }
 
-    public int insertOrder(Orders order) {
-        String sql = """
-            INSERT INTO [dbo].[Orders]
-                ([PatientID], [PrescriptionID], [OrderDate], [TotalAmount], [Status], [PaymentMethod], [PaymentStatus])
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        """;
-
-        try (Connection conn = new DBContext().connection; PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-
-            ps.setInt(1, order.getPatients().getPatientID());
-            ps.setInt(2, order.getPrescriptions().getPrescriptionId());
-            ps.setTimestamp(3, order.getOrderDate() != null ? order.getOrderDate() : new Timestamp(System.currentTimeMillis()));
-            ps.setBigDecimal(4, order.getTotalAmount());
-            ps.setString(5, order.getStatus());
-            ps.setString(6, order.getPaymentMethod());
-            ps.setString(7, order.getPaymentStatus());
-
-            int affectedRows = ps.executeUpdate();
-
-            if (affectedRows == 0) {
-                throw new SQLException("Creating order failed, no rows affected.");
-            }
-
-            // Lấy orderId vừa insert
-            try (ResultSet rs = ps.getGeneratedKeys()) {
-                if (rs.next()) {
-                    return rs.getInt(1);
-                }
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return -1; // Nếu chèn thất bại
-    }
-
     public Orders getOrderById(int orderId) {
         Orders order = null;
 
@@ -356,6 +319,88 @@ public class OrderDao {
         return list;
     }
 
+    public int countFilter(OrderDto o) {
+        int count = 0;
+
+        StringBuilder sql = new StringBuilder("""
+        SELECT COUNT(*) AS Total
+        FROM dbo.Orders o
+        JOIN dbo.Patients pa ON o.PatientID = pa.PatientID
+        JOIN dbo.Users u ON pa.UserID = u.UserID
+        LEFT JOIN dbo.Prescriptions p ON o.PrescriptionID = p.PrescriptionID
+        LEFT JOIN dbo.Doctors d ON p.DoctorID = d.DoctorID
+        LEFT JOIN dbo.Users du ON d.UserID = du.UserID
+        WHERE 1=1
+    """);
+
+        List<Object> params = new ArrayList<>();
+
+        // --- Dynamic WHERE conditions (giống filterOrders) ---
+        if (o.getPatientId() != null) {
+            sql.append(" AND o.PatientID = ? ");
+            params.add(o.getPatientId());
+        }
+        if (o.getPatientName() != null && !o.getPatientName().isBlank()) {
+            sql.append(" AND u.FullName LIKE ? ");
+            params.add("%" + o.getPatientName().trim() + "%");
+        }
+        if (o.getPrescriptionId() != null) {
+            sql.append(" AND o.PrescriptionID = ? ");
+            params.add(o.getPrescriptionId());
+        }
+        if (o.getOrderDateFrom() != null) {
+            sql.append(" AND CAST(o.OrderDate AS DATE) >= ? ");
+            params.add(o.getOrderDateFrom());
+        }
+        if (o.getOrderDateTo() != null) {
+            sql.append(" AND CAST(o.OrderDate AS DATE) <= ? ");
+            params.add(o.getOrderDateTo());
+        }
+        if (o.getTotalAmountFrom() != null) {
+            sql.append(" AND o.TotalAmount >= ? ");
+            params.add(o.getTotalAmountFrom());
+        }
+        if (o.getTotalAmountTo() != null) {
+            sql.append(" AND o.TotalAmount <= ? ");
+            params.add(o.getTotalAmountTo());
+        }
+        if (o.getStatus() != null && !o.getStatus().isBlank()) {
+            sql.append(" AND o.Status = ? ");
+            params.add(o.getStatus().trim());
+        }
+        if (o.getPaymentStatus() != null && !o.getPaymentStatus().isBlank()) {
+            sql.append(" AND o.PaymentStatus = ? ");
+            params.add(o.getPaymentStatus().trim());
+        }
+
+        try (Connection connection = new DBContext().connection; PreparedStatement ps = connection.prepareStatement(sql.toString())) {
+
+            int i = 1;
+            for (Object param : params) {
+                if (param instanceof Integer) {
+                    ps.setInt(i++, (Integer) param);
+                } else if (param instanceof String) {
+                    ps.setString(i++, (String) param);
+                } else if (param instanceof Date) {
+                    ps.setDate(i++, (Date) param);
+                } else if (param instanceof BigDecimal) {
+                    ps.setBigDecimal(i++, (BigDecimal) param);
+                }
+            }
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    count = rs.getInt("Total");
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return count;
+    }
+
     private Orders mapRow(ResultSet rs) throws SQLException {
         // --- Patient User ---
         Users patientUser = new Users();
@@ -465,6 +510,40 @@ public class OrderDao {
         }
 
         return list;
+    }
+
+    public boolean updateOrder(Orders order) {
+        String sql = """
+        UPDATE [dbo].[Orders]
+        SET PatientID = ?, 
+            PrescriptionID = ?, 
+            OrderDate = ?, 
+            TotalAmount = ?, 
+            Status = ?, 
+            PaymentMethod = ?, 
+            PaymentStatus = ?
+        WHERE OrderID = ?
+    """;
+
+        try (Connection conn = new DBContext().connection; PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, order.getPatients().getPatientID());
+            ps.setInt(2, order.getPrescriptions().getPrescriptionId());
+            ps.setTimestamp(3, order.getOrderDate() != null ? order.getOrderDate() : new Timestamp(System.currentTimeMillis()));
+            ps.setBigDecimal(4, order.getTotalAmount());
+            ps.setString(5, order.getStatus());
+            ps.setString(6, order.getPaymentMethod());
+            ps.setString(7, order.getPaymentStatus());
+            ps.setInt(8, order.getOrderId());
+
+            int affectedRows = ps.executeUpdate();
+            return affectedRows > 0;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return false;
     }
 
 }
