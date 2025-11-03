@@ -16,6 +16,48 @@ import model.Users;
  */
 public class PatientDao extends DBContext {
 
+    public Integer insertPatient(Patients patient) {
+        String sql = """
+        INSERT INTO [dbo].[Patients]
+        ([UserID], [BloodType], [Allergies], [MedicalHistory],
+         [InsuranceInfo], [EmergencyContactName], [EmergencyContactPhone])
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """;
+
+        try (Connection conn = new DBContext().connection; PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            // --- Gán giá trị ---
+            if (patient.getUserID() != null) {
+                ps.setInt(1, patient.getUserID().getUserId());
+            } else {
+                ps.setNull(1, Types.INTEGER);
+            }
+
+            ps.setString(2, patient.getBloodType());
+            ps.setString(3, patient.getAllergies());
+            ps.setString(4, patient.getMedicalHistory());
+            ps.setString(5, patient.getInsuranceInfo());
+            ps.setString(6, patient.getEmergencyContactName());
+            ps.setString(7, patient.getEmergencyContactPhone());
+
+            // --- Thực thi và lấy ID vừa insert ---
+            int affectedRows = ps.executeUpdate();
+
+            if (affectedRows > 0) {
+                try (ResultSet rs = ps.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        return rs.getInt(1); // Trả về PatientID vừa thêm
+                    }
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return null; // Thất bại
+    }
+
     public List<Patients> getAllPatients() {
         List<Patients> patients = new ArrayList<>();
         String sql = """

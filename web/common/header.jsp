@@ -13,7 +13,7 @@
         </div>
         <nav>
             <a href="/DentalClinic/home" style="color: white; text-decoration: none; margin-right: 20px;">Home</a>
-            <a href="/DentalClinic/service" style="color: white; text-decoration: none; margin-right: 20px;">Services</a>
+            
             <%
                 Users user = (Users) session.getAttribute("user");
                 if (user != null) {
