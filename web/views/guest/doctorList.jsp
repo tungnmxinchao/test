@@ -38,7 +38,7 @@
                     <div class="doctor-list">
                         <c:forEach var="doc" items="${doctors}">
                             <div class="doctor-card" id="doctor-${doc.doctorId}">
-                                <img src="${pageContext.request.contextPath}/img/doctor-default.jpg" alt="${doc.fullName}">
+                                <img src="${doc.image}" alt="${doc.fullName}">
                                 <h3>${doc.fullName}</h3>
                                 <p><strong>Chuyên khoa:</strong> ${doc.specialization}</p>
                                 <p><strong>Kinh nghiệm:</strong> ${doc.yearsOfExperience} năm</p>

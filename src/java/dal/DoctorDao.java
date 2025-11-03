@@ -187,7 +187,9 @@ public class DoctorDao extends DBContext {
             u.Address        AS u_Address,
             u.Role           AS u_Role,
             u.IsActive       AS u_IsActive,
-            u.CreatedDate    AS u_CreatedDate
+            u.CreatedDate    AS u_CreatedDate,
+            u.image
+                           
         FROM dbo.Doctors d
         JOIN dbo.Users   u ON u.UserID = d.UserID
         WHERE d.DoctorID = ?
@@ -217,6 +219,7 @@ public class DoctorDao extends DBContext {
                     // chú ý: getBoolean trả false khi NULL; nếu cần phân biệt null -> dùng getObject
                     user.setIsActive(rs.getObject("u_IsActive") == null ? null : rs.getBoolean("u_IsActive"));
                     user.setCreateDate(rs.getDate("u_CreatedDate"));
+                     user.setImage(rs.getString("image"));
 
                     doctor.setUserId(user);
 

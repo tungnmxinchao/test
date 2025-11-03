@@ -67,7 +67,7 @@ public class AppropriateSpecialistController extends HttpServlet {
                     dto.setYearsOfExperience(doctor.getYearsOfExperience());
                     dto.setBiography(doctor.getBiography());
                     dto.setConsultationFee(doctor.getConsultationFee());
-
+                    dto.setImage(user.getImage());
                     doctorDTOs.add(dto);
                 }
             }
