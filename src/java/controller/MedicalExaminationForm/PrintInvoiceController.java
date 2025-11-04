@@ -21,6 +21,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
 import model.Appointments;
 import model.MedicalRecords;
+import model.OrderDetails;
 import model.Orders;
 import model.Prescriptions;
 
@@ -84,6 +85,7 @@ public class PrintInvoiceController extends HttpServlet {
 
         //Tìm Orders theo prescriptionId
         Orders order = null;
+        List<OrderDetails> orderDetails = null;
         if (prescription != null) {
             OrderDao orderDao = new OrderDao();
             OrderDto orderDto = new OrderDto();
@@ -94,6 +96,8 @@ public class PrintInvoiceController extends HttpServlet {
             if (!orders.isEmpty()) {
                 order = orders.get(0);
             }
+
+            orderDetails = orderDao.getOrderDetailsByOrderId(order.getOrderId());
         }
 
         if (order == null) {
@@ -107,8 +111,9 @@ public class PrintInvoiceController extends HttpServlet {
         request.setAttribute("record", record);
         request.setAttribute("prescription", prescription);
         request.setAttribute("order", order);
+        request.setAttribute("orderDetails", orderDetails);
 
-        request.getRequestDispatcher("invoice-print.jsp").forward(request, response);
+        request.getRequestDispatcher("/views/manage/invoice-print.jsp").forward(request, response);
 
     }
 

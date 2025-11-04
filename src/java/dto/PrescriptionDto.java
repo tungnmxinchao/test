@@ -3,14 +3,18 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package dto;
+
 import java.sql.*;
+
 public class PrescriptionDto {
+
     private Integer recordId;
     private Integer doctorId;
     private Timestamp issueDateFrom;
     private Timestamp issueDateTo;
     private String instructions;
     private Integer patientId;
+    private Integer appointmentId;
 
     private boolean paginationMode = true;
     private boolean sortMode = false;
@@ -68,6 +72,14 @@ public class PrescriptionDto {
         this.patientId = patientId;
     }
 
+    public Integer getAppointmentId() {
+        return appointmentId;
+    }
+
+    public void setAppointmentId(Integer appointmentId) {
+        this.appointmentId = appointmentId;
+    }
+
     public boolean isPaginationMode() {
         return paginationMode;
     }
@@ -99,7 +111,5 @@ public class PrescriptionDto {
     public void setSize(int size) {
         this.size = size;
     }
-
-   
 
 }

@@ -162,7 +162,7 @@ public class CreateOrderController extends HttpServlet {
 
             // Lấy Prescription từ hồ sơ 
             PrescriptionDto presDto = new PrescriptionDto();
-            presDto.setRecordId(appointment.getPatientId().getPatientID());
+            presDto.setAppointmentId(appointment.getAppointmentId());
             presDto.setPaginationMode(false);
             List<Prescriptions> presList = prescriptionDao.filterPrescription(presDto);
             Prescriptions prescription = presList.isEmpty() ? null : presList.get(0);
@@ -189,7 +189,7 @@ public class CreateOrderController extends HttpServlet {
                 return;
             }
 
-            response.sendRedirect(request.getContextPath() + "/printOrder?orderId=" + orderId);
+            response.sendRedirect(request.getContextPath() + "/checkout?orderId=" + orderId);
 
         } catch (NumberFormatException ex) {
             request.setAttribute("error", "Dữ liệu số không hợp lệ.");

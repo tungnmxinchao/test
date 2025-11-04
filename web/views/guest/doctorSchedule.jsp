@@ -17,11 +17,11 @@
         <!-- Header -->
         <jsp:include page="../../common/header.jsp"></jsp:include>
 
-        <div class="container">
+            <div class="container">
 
-            <!-- 🔙 Nút quay lại -->
-            <div style="margin: 16px 0;">
-                <a href="${pageContext.request.contextPath}/appropriateSpecialist?serviceId=${serviceId}" 
+                <!-- 🔙 Nút quay lại -->
+                <div style="margin: 16px 0;">
+                    <a href="${pageContext.request.contextPath}/appropriateSpecialist?serviceId=${serviceId}" 
                    class="btn" 
                    style="background-color:#4CAF50; color:white; padding:8px 16px; border-radius:6px; text-decoration:none;">
                     ⬅ Quay lại danh sách bác sĩ
@@ -83,8 +83,9 @@
                                                 <span class="time" style="font-weight:600;">
                                                     ${s.startTime} - ${s.endTime}
                                                 </span>
-                                                <a class="btn"
-                                                   style="margin-left:auto;"
+                                                <a class="btn slot-btn"
+                                                   data-date="${date}"
+                                                   data-start="${s.startTime}"
                                                    href="${pageContext.request.contextPath}/appointmentCreate?doctorId=${doctorId}&serviceId=${serviceId}&date=${date}&start=${s.startTime}&end=${s.endTime}">
                                                     Chọn khung giờ này
                                                 </a>
@@ -102,6 +103,35 @@
 
         <!-- Footer -->
         <jsp:include page="../../common/footer.jsp"></jsp:include>
+
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const now = new Date();
+
+                // Lặp qua tất cả nút chọn khung giờ
+                document.querySelectorAll(".slot-btn").forEach(function (btn) {
+                    btn.addEventListener("click", function (e) {
+                        const dateStr = btn.getAttribute("data-date");   // "2025-11-04"
+                        const startTime = btn.getAttribute("data-start"); // "08:02:00"
+
+                        // Ghép lại thành ISO datetime
+                        const slotDateTime = new Date(dateStr + "T" + startTime);
+
+                        if (slotDateTime < now) {
+                            e.preventDefault(); // Ngăn chuyển trang
+                            Swal.fire({
+                                icon: "warning",
+                                title: "Không thể chọn khung giờ này",
+                                text: "Khung giờ bạn chọn đã qua. Vui lòng chọn khung giờ khác.",
+                                confirmButtonColor: "#3085d6",
+                                confirmButtonText: "Đã hiểu"
+                            });
+                        }
+                    });
+                });
+            });
+        </script>
 
     </body>
 </html>

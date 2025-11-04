@@ -93,41 +93,41 @@ public class PrescriptionDao {
         List<Prescriptions> list = new ArrayList<>();
 
         StringBuilder sql = new StringBuilder("""
-            SELECT 
-                p.[PrescriptionID],
-                p.[RecordID],
-                p.[DoctorID],
-                p.[IssueDate],
-                p.[Instructions],
-                
-                -- Doctor info
-                d.[Specialization],
-                d.[LicenseNumber],
-                d.[YearsOfExperience],
-                d.[Education],
-                d.[Biography],
-                d.[ConsultationFee],
-                u.[UserID],
-                u.[FullName] AS DoctorName,
-                u.[Email] AS DoctorEmail,
-                
-                -- MedicalRecord info
-                mr.[AppointmentID],
-                mr.[Diagnosis],
-                mr.[Symptoms],
-                mr.[TreatmentPlan],
-                mr.[FollowUpDate],
-                mr.[CreatedDate]
-            FROM [dbo].[Prescriptions] p
-            LEFT JOIN [dbo].[Doctors] d ON p.[DoctorID] = d.[DoctorID]
-            LEFT JOIN [dbo].[Users] u ON d.[UserID] = u.[UserID]
-            LEFT JOIN [dbo].[MedicalRecords] mr ON p.[RecordID] = mr.[RecordID]
-            LEFT JOIN [dbo].[Appointments] a ON mr.[AppointmentID] = a.[AppointmentID]
-            LEFT JOIN [dbo].[Patients] pat ON a.[PatientID] = pat.[PatientID]
-            WHERE 1 = 1
-        """);
+        SELECT 
+            p.[PrescriptionID],
+            p.[RecordID],
+            p.[DoctorID],
+            p.[IssueDate],
+            p.[Instructions],
+            
+            -- Doctor info
+            d.[Specialization],
+            d.[LicenseNumber],
+            d.[YearsOfExperience],
+            d.[Education],
+            d.[Biography],
+            d.[ConsultationFee],
+            u.[UserID],
+            u.[FullName] AS DoctorName,
+            u.[Email] AS DoctorEmail,
+            
+            -- MedicalRecord info
+            mr.[AppointmentID],
+            mr.[Diagnosis],
+            mr.[Symptoms],
+            mr.[TreatmentPlan],
+            mr.[FollowUpDate],
+            mr.[CreatedDate]
+        FROM [dbo].[Prescriptions] p
+        LEFT JOIN [dbo].[Doctors] d ON p.[DoctorID] = d.[DoctorID]
+        LEFT JOIN [dbo].[Users] u ON d.[UserID] = u.[UserID]
+        LEFT JOIN [dbo].[MedicalRecords] mr ON p.[RecordID] = mr.[RecordID]
+        LEFT JOIN [dbo].[Appointments] a ON mr.[AppointmentID] = a.[AppointmentID]
+        LEFT JOIN [dbo].[Patients] pat ON a.[PatientID] = pat.[PatientID]
+        WHERE 1 = 1
+    """);
 
-        //Điều kiện lọc động
+        // Điều kiện lọc động
         if (dto.getRecordId() != null) {
             sql.append(" AND p.RecordID = ?\n");
         }
@@ -136,6 +136,9 @@ public class PrescriptionDao {
         }
         if (dto.getPatientId() != null) {
             sql.append(" AND pat.PatientID = ?\n");
+        }
+        if (dto.getAppointmentId() != null) {
+            sql.append(" AND a.AppointmentID = ?\n");  // lọc theo AppointmentID
         }
         if (dto.getIssueDateFrom() != null) {
             sql.append(" AND p.IssueDate >= ?\n");
@@ -147,7 +150,7 @@ public class PrescriptionDao {
             sql.append(" AND p.Instructions LIKE ?\n");
         }
 
-        // 🔢 Sắp xếp & phân trang
+        // Sắp xếp & phân trang
         if (dto.isSortMode()) {
             sql.append(" ORDER BY p.IssueDate DESC\n");
         }
@@ -169,6 +172,9 @@ public class PrescriptionDao {
             }
             if (dto.getPatientId() != null) {
                 ps.setInt(i++, dto.getPatientId());
+            }
+            if (dto.getAppointmentId() != null) {
+                ps.setInt(i++, dto.getAppointmentId());
             }
             if (dto.getIssueDateFrom() != null) {
                 ps.setTimestamp(i++, dto.getIssueDateFrom());

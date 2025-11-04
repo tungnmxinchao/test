@@ -6,7 +6,7 @@
 
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <div class="sidebar">
-    <h2>Tiếp đón</h2>
+    <h2>Quản lý</h2>
     <a href="${pageContext.request.contextPath}/lookUpAppointments" class="active">Tra cứu lịch hẹn</a>
     <a href="${pageContext.request.contextPath}/patientsToday">Bệnh nhân hôm nay</a>
     <a href="${pageContext.request.contextPath}/bookAppointmentsDirectly">Đặt lịch trực tiếp</a>

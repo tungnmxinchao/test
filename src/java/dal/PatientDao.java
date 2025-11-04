@@ -223,4 +223,55 @@ public class PatientDao extends DBContext {
         return false;
     }
 
+    public Patients getPatientById(int patientId) {
+        String sql = """
+        SELECT 
+            p.PatientID, p.UserID, p.BloodType, p.Allergies, p.MedicalHistory, 
+            p.InsuranceInfo, p.EmergencyContactName, p.EmergencyContactPhone,
+            u.Username, u.Email, u.FullName, u.PhoneNumber, u.DateOfBirth, 
+            u.Gender, u.Address, u.Role, u.IsActive, u.CreatedDate
+        FROM dbo.Patients p
+        JOIN dbo.Users u ON p.UserID = u.UserID
+        WHERE p.PatientID = ?
+    """;
+
+        try (Connection conn = new DBContext().connection; PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, patientId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    // Tạo đối tượng Users
+                    Users user = new Users();
+                    user.setUserId(rs.getInt("UserID"));
+                    user.setUserName(rs.getString("Username"));
+                    user.setEmail(rs.getString("Email"));
+                    user.setFullName(rs.getString("FullName"));
+                    user.setPhoneNumber(rs.getString("PhoneNumber"));
+                    user.setDateOfBirth(rs.getDate("DateOfBirth"));
+                    user.setGender(rs.getString("Gender"));
+                    user.setAddress(rs.getString("Address"));
+                    user.setRole(rs.getString("Role"));
+                    user.setIsActive(rs.getBoolean("IsActive"));
+                    user.setCreateDate(rs.getDate("CreatedDate"));
+
+                    // Tạo đối tượng Patients
+                    Patients patient = new Patients();
+                    patient.setPatientID(rs.getInt("PatientID"));
+                    patient.setBloodType(rs.getString("BloodType"));
+                    patient.setAllergies(rs.getString("Allergies"));
+                    patient.setMedicalHistory(rs.getString("MedicalHistory"));
+                    patient.setInsuranceInfo(rs.getString("InsuranceInfo"));
+                    patient.setEmergencyContactName(rs.getString("EmergencyContactName"));
+                    patient.setEmergencyContactPhone(rs.getString("EmergencyContactPhone"));
+                    patient.setUserID(user);
+
+                    return patient;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null; 
+    }
+
 }

@@ -242,9 +242,9 @@ public class RecordMedicalResultsController extends HttpServlet {
 
                     appService.setNotes(extraServiceNotes);
                     int insertApSer = serviceDAO.insertAppointmentService(appService);
-                     if(insertApSer == -1) {
-                         throw new Exception("Lỗi khi thêm các dịch vụ tùy chọn");
-                     }
+                    if (insertApSer == -1) {
+                        throw new Exception("Lỗi khi thêm các dịch vụ tùy chọn");
+                    }
                 }
             }
 

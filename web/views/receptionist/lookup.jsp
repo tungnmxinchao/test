@@ -26,6 +26,7 @@
                     <div class="header">
                         <h1>Tra cứu lịch hẹn của khách hàng</h1>
                     </div>
+
                 <c:if test="${not empty successMessage}">
                     <div class="alert alert-success">${successMessage}</div>
                     <c:remove var="successMessage" scope="session"/>
@@ -93,10 +94,8 @@
                                             <td>${a.startTime} - ${a.endTime}</td>
                                             <td><span class="status ${a.status}">${a.status}</span></td>
                                             <td class="actions">
-                                                <form action="${pageContext.request.contextPath}/checkin" 
-                                                      method="post" 
-                                                      style="display:inline;" 
-                                                      onsubmit="confirmCheckIn(this); return false;">
+                                                <!-- Xác nhận khách hàng đến khám -->
+                                                <form action="${pageContext.request.contextPath}/checkin" method="post" onsubmit="confirmCheckIn(this); return false;">
                                                     <input type="hidden" name="appointmentId" value="${a.appointmentId}">
                                                     <button type="submit" class="btn btn-checkin"
                                                             ${a.status != 'Scheduled' && a.status != 'Rescheduled' ? 'disabled' : ''}>
@@ -104,17 +103,36 @@
                                                     </button>
                                                 </form>
 
-
-                                                <form action="${pageContext.request.contextPath}/appointmentDetail" method="get" style="display:inline;">
+                                                <!-- Xem chi tiết -->
+                                                <form action="${pageContext.request.contextPath}/appointmentDetail" method="get">
                                                     <input type="hidden" name="appointmentId" value="${a.appointmentId}">
                                                     <button type="submit" class="btn btn-detail">Chi tiết</button>
                                                 </form>
 
-                                                <form action="${pageContext.request.contextPath}/printMedicalExamination" method="get" style="display:inline;">
+                                                <!-- In phiếu khám -->
+                                                <form action="${pageContext.request.contextPath}/printMedicalExamination" method="get">
                                                     <input type="hidden" name="appointmentId" value="${a.appointmentId}">
                                                     <button type="submit" class="btn btn-print"
                                                             ${a.status != 'Confirmed' ? 'disabled' : ''}>
                                                         In phiếu khám
+                                                    </button>
+                                                </form>
+
+                                                <!-- Tạo đơn hàng -->
+                                                <form action="${pageContext.request.contextPath}/createOrder" method="get">
+                                                    <input type="hidden" name="appointmentId" value="${a.appointmentId}">
+                                                    <input type="hidden" name="patientId" value="${a.patientId.patientID}">
+                                                    <button type="submit" class="btn btn-order"
+                                                            ${a.status != 'Completed' ? 'disabled' : ''}>
+                                                        Tạo đơn hàng
+                                                    </button>
+                                                </form>
+
+                                                <form action="${pageContext.request.contextPath}/printInvoice" method="get" target="_blank">
+                                                    <input type="hidden" name="id" value="${a.appointmentId}">
+                                                    <button type="submit" class="btn btn-invoice"
+                                                            ${a.status != 'Completed' ? 'disabled' : ''}>
+                                                        In hóa đơn
                                                     </button>
                                                 </form>
                                             </td>
@@ -124,6 +142,8 @@
                             </table>
                         </c:otherwise>
                     </c:choose>
+
+                    <!-- Phần phân trang -->
                     <jsp:include page="../../common/pagination.jsp">
                         <jsp:param name="baseUrl" value="${baseUrl}" />
                         <jsp:param name="page" value="${page}" />
@@ -134,23 +154,24 @@
                 </div>
             </div>
         </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script>
+                                                    function confirmCheckIn(form) {
+                                                        event.preventDefault();
+                                                        Swal.fire({
+                                                            title: 'Xác nhận khách hàng đến khám?',
+                                                            icon: 'question',
+                                                            showCancelButton: true,
+                                                            confirmButtonText: 'Xác nhận',
+                                                            cancelButtonText: 'Hủy',
+                                                            confirmButtonColor: '#28a745'
+                                                        }).then((result) => {
+                                                            if (result.isConfirmed) {
+                                                                form.submit();
+                                                            }
+                                                        });
+                                                    }
+        </script>
     </body>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script>
-                                                          function confirmCheckIn(form) {
-                                                              event.preventDefault();
-                                                              Swal.fire({
-                                                                  title: 'Xác nhận khách hàng đến khám?',
-                                                                  icon: 'question',
-                                                                  showCancelButton: true,
-                                                                  confirmButtonText: 'Xác nhận',
-                                                                  cancelButtonText: 'Hủy',
-                                                                  confirmButtonColor: '#28a745'
-                                                              }).then((result) => {
-                                                                  if (result.isConfirmed) {
-                                                                      form.submit();
-                                                                  }
-                                                              });
-                                                          }
-    </script>
 </html>

@@ -27,6 +27,7 @@ import model.Appointments;
 import model.MedicalRecords;
 import model.Patients;
 import model.Prescriptions;
+import utils.SessionUtils;
 
 /**
  *
@@ -55,15 +56,15 @@ public class PatientRecordController extends HttpServlet {
             int patientId = Integer.parseInt(pid);
 
             HttpSession session = request.getSession(false);
-            model.Users currentUser = session != null ? (model.Users) session.getAttribute("account") : null;
+            model.Users currentUser = session != null ? (model.Users) session.getAttribute("user") : null;
             String currentRole = currentUser != null ? currentUser.getRole() : "Guest";
 
             boolean allowed = false;
             if ("Admin".equalsIgnoreCase(currentRole) || "Receptionist".equalsIgnoreCase(currentRole)) {
                 allowed = true;
             } else if ("Doctor".equalsIgnoreCase(currentRole)) {
-                Integer doctorId = 1;
-                if (doctorId != null) {
+                int doctorId = SessionUtils.getDoctorId(session);
+                if (doctorId > 0) {
                     // Dùng filterAppointment để kiểm tra quan hệ
                     AppointmentDto dto = new AppointmentDto();
                     dto.setDoctorId(doctorId);
@@ -86,7 +87,7 @@ public class PatientRecordController extends HttpServlet {
             }
 
             // 1) Thông tin bệnh nhân (đúng theo patientId)
-            Patients patient = patientDao.getPatientByUserId(patientId);
+            Patients patient = patientDao.getPatientById(patientId);
             if (patient == null) {
                 request.setAttribute("error", "Không tìm thấy thông tin bệnh nhân.");
                 request.getRequestDispatcher("/error.jsp").forward(request, response);
@@ -117,7 +118,7 @@ public class PatientRecordController extends HttpServlet {
                 prescriptionsMap.put(r.getRecordId(), pres);
             }
 
-            // 5) Orders theo từng prescription (nếu cần)
+            // 5) Orders theo từng prescription 
             Map<Integer, java.util.List<model.Orders>> ordersByPrescription = new java.util.HashMap<>();
             for (List<Prescriptions> presList : prescriptionsMap.values()) {
                 for (model.Prescriptions pres : presList) {
@@ -136,7 +137,7 @@ public class PatientRecordController extends HttpServlet {
             request.setAttribute("prescriptionsMap", prescriptionsMap);
             request.setAttribute("ordersByPrescription", ordersByPrescription);
 
-            request.getRequestDispatcher("/views/medical/patient-record.jsp").forward(request, response);
+            request.getRequestDispatcher("/views/manage/patient-record.jsp").forward(request, response);
 
         } catch (NumberFormatException ex) {
             request.setAttribute("error", "PatientID không hợp lệ.");

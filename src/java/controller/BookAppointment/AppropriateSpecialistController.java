@@ -55,7 +55,7 @@ public class AppropriateSpecialistController extends HttpServlet {
                 Doctor doctor = doctorDAO.getDoctorByID(doctorId);
                 if (doctor != null && doctor.getUserId() != null) {
                     int userId = doctor.getUserId().getUserId();
-                    Users user = userDAO.getUserById(userId);
+                            Users user = userDAO.getUserById(userId);
 
                     // Gói vào DTO
                     DoctorDTO dto = new DoctorDTO();
