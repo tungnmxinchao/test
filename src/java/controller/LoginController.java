@@ -72,7 +72,7 @@ public class LoginController extends HttpServlet {
                 if (doctor != null) {
                     session.setAttribute("doctor", doctor);
                 }
-                response.sendRedirect("lookUpAppointments");
+                response.sendRedirect("patientsToday");
                 break;
             }
             case "patient": {
