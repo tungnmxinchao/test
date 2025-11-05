@@ -44,7 +44,7 @@ public class CustomersBookSchedulesController extends HttpServlet {
 
             int patientId = SessionUtils.getPatientId(session);
             if (patientId <= 0) {
-                request.setAttribute("error", "Vui lòng đăng nhập tài khoản bệnh nhân để đặt lịch khám.");
+                request.setAttribute("error", "Bạn cần đăng nhập và cập nhật hồ sơ bệnh mới có thể khám");
                 request.getRequestDispatcher("/error.jsp").forward(request, response);
                 return;
             }

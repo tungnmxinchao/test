@@ -83,7 +83,10 @@ public class LoginController extends HttpServlet {
                 response.sendRedirect("home");
                 break;
             }
-            case "admin":
+            case "admin":{
+                  response.sendRedirect("manageOrder");
+                  break;
+            }
             case "receptionist": { 
                 response.sendRedirect("lookUpAppointments");
                 break;
