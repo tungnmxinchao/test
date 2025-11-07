@@ -249,34 +249,48 @@
         <!-- Footer -->
         <jsp:include page="../../common/footer.jsp"></jsp:include>
 
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script>
-            // Bắt sự kiện chọn khung giờ -> fill form ẩn -> submit
             document.addEventListener('DOMContentLoaded', function () {
-                var buttons = document.querySelectorAll('.slot-pick');
-                var fDate = document.getElementById('f-newDate');
-                var fStart = document.getElementById('f-newStart');
-                var fEnd = document.getElementById('f-newEnd');
-                var form = document.getElementById('rescheduleForm');
+                const now = new Date();
 
-                buttons.forEach(function (btn) {
-                    btn.addEventListener('click', function () {
-                        var date = this.getAttribute('data-date');   // yyyy-MM-dd (LocalDate toString)
-                        var start = this.getAttribute('data-start');  // HH:mm:ss (java.sql.Time toString)
-                        var end = this.getAttribute('data-end');    // HH:mm:ss
+                const buttons = document.querySelectorAll('.slot-pick');
+                const fDate = document.getElementById('f-newDate');
+                const fStart = document.getElementById('f-newStart');
+                const fEnd = document.getElementById('f-newEnd');
+                const form = document.getElementById('rescheduleForm');
 
-                        // Nếu backend muốn HH:mm thì cắt bớt giây:
-                        // start = start.substring(0,5);
-                        // end   = end.substring(0,5);
+                buttons.forEach(btn => {
+                    btn.addEventListener('click', function (e) {
+                        const dateStr = this.getAttribute('data-date');     // yyyy-MM-dd
+                        const startTime = this.getAttribute('data-start');  // HH:mm:ss
+                        const endTime = this.getAttribute('data-end');      // HH:mm:ss
+                        const slotDateTime = new Date(dateStr + "T" + startTime);
 
-                        fDate.value = date;
-                        fStart.value = start;
-                        fEnd.value = end;
+                        // ✅ Kiểm tra khung giờ trong quá khứ
+                        if (slotDateTime < now) {
+                            e.preventDefault();
+                            Swal.fire({
+                                icon: "warning",
+                                title: "Không thể chọn khung giờ này",
+                                text: "Khung giờ bạn chọn đã qua. Vui lòng chọn khung giờ khác.",
+                                confirmButtonColor: "#3085d6"
+                            });
+                            return;
+                        }
+
+                        // ✅ Nếu hợp lệ → gán giá trị form & submit
+                        fDate.value = dateStr;
+                        fStart.value = startTime;
+                        fEnd.value = endTime;
 
                         form.submit();
                     });
                 });
             });
         </script>
+
+
 
     </body>
 </html>

@@ -43,7 +43,9 @@ public class FilterReceptionist implements Filter {
 
         Users user = (Users) session.getAttribute("user");
 
-        if (user == null || !"Receptionist".equalsIgnoreCase(user.getRole())) {
+        if (user == null
+                || (!"Receptionist".equalsIgnoreCase(user.getRole())
+                && !"Admin".equalsIgnoreCase(user.getRole()))) {
             httpResponse.sendRedirect(httpRequest.getContextPath() + "/login");
             return;
         }

@@ -130,27 +130,71 @@
                 </div>
             </div>
         </div>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
         <script>
-            function loadDoctors() {
-                const serviceId = document.getElementById("serviceId").value;
-                const patientId = document.getElementById("patientId").value;
-                if (serviceId) {
-                    window.location.href = "bookAppointmentsDirectly?patientId=" + patientId + "&serviceId=" + serviceId;
-                }
-            }
+                                    function loadDoctors() {
+                                        const serviceId = document.getElementById("serviceId").value;
+                                        const patientId = document.getElementById("patientId").value;
+                                        if (serviceId) {
+                                            window.location.href = "bookAppointmentsDirectly?patientId=" + patientId + "&serviceId=" + serviceId;
+                                        }
+                                    }
 
-            function loadSchedule() {
-                const serviceId = document.getElementById("serviceId").value;
-                const patientId = document.getElementById("patientId").value;
-                const doctorId = document.getElementById("doctorId").value;
-                if (serviceId && doctorId) {
-                    window.location.href = "bookAppointmentsDirectly?patientId=" + patientId
-                            + "&serviceId=" + serviceId
-                            + "&doctorId=" + doctorId;
-                }
-            }
+                                    function loadSchedule() {
+                                        const serviceId = document.getElementById("serviceId").value;
+                                        const patientId = document.getElementById("patientId").value;
+                                        const doctorId = document.getElementById("doctorId").value;
+                                        if (serviceId && doctorId) {
+                                            window.location.href = "bookAppointmentsDirectly?patientId=" + patientId
+                                                    + "&serviceId=" + serviceId
+                                                    + "&doctorId=" + doctorId;
+                                        }
+                                    }
         </script>
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const now = new Date();
+
+                // Khi chọn radio
+                document.querySelectorAll("input[name='selectedSlot']").forEach(radio => {
+                    radio.addEventListener("change", function (e) {
+                        const [dateStr, startTime] = e.target.value.split(",");
+                        const slotDateTime = new Date(dateStr + "T" + startTime);
+
+                        if (slotDateTime < now) {
+                            e.target.checked = false;
+                            Swal.fire({
+                                icon: "warning",
+                                title: "Không thể chọn khung giờ này",
+                                text: "Khung giờ bạn chọn đã qua. Vui lòng chọn khung giờ khác.",
+                                confirmButtonColor: "#3085d6"
+                            });
+                        }
+                    });
+                });
+
+                // Khi submit form
+                const form = document.getElementById("bookingForm");
+                form.addEventListener("submit", function (e) {
+                    const checked = document.querySelector("input[name='selectedSlot']:checked");
+                    if (checked) {
+                        const [dateStr, startTime] = checked.value.split(",");
+                        const slotDateTime = new Date(dateStr + "T" + startTime);
+                        if (slotDateTime < now) {
+                            e.preventDefault();
+                            Swal.fire({
+                                icon: "error",
+                                title: "Khung giờ đã qua",
+                                text: "Vui lòng chọn khung giờ trong tương lai.",
+                                confirmButtonColor: "#3085d6"
+                            });
+                        }
+                    }
+                });
+            });
+        </script>
+
 
     </body>
 </html>

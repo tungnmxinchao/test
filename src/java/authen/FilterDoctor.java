@@ -43,7 +43,9 @@ public class FilterDoctor implements Filter {
 
         Users user = (Users) session.getAttribute("user");
 
-        if (user == null || !"Doctor".equalsIgnoreCase(user.getRole())) {
+        if (user == null
+                || (!"Doctor".equalsIgnoreCase(user.getRole())
+                && !"Admin".equalsIgnoreCase(user.getRole()))) {
             httpResponse.sendRedirect(httpRequest.getContextPath() + "/login");
             return;
         }

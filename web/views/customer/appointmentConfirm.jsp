@@ -33,7 +33,7 @@
             <c:if test="${patient == null}">
                 <div class="confirm-card" style="border-color:#ffe0e0;">
                     <p style="color:#b30000;">
-                        Bạn cần đăng nhập tài khoản bệnh nhân để đặt lịch.
+                        Bạn cần đăng nhập và cập nhật hồ sơ khám.
                     </p>
                     <a class="btn btn-primary" href="${pageContext.request.contextPath}/login">Đăng nhập</a>
                 </div>
