@@ -9,7 +9,7 @@
 <div class="sidebar">
     <h2>Quản lý</h2>
     <c:choose>
-        <c:when test="${user.role == 'Admin'}">
+        <c:when test="${sessionScope.user.role == 'Admin'}">
             <!-- Admin toàn quyền -->
             <a href="${pageContext.request.contextPath}/lookUpAppointments">Tra cứu lịch hẹn</a>
             <a href="${pageContext.request.contextPath}/patientsToday">Bệnh nhân hôm nay</a>
