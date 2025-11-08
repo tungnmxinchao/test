@@ -65,7 +65,7 @@
             </form>
 
             <div style="margin-top: 15px;">
-                <p>Already have an account ?<a href="/DentalClinic/login">Login</a></p>
+                <p>Already have an account ?<a href="login">Login</a></p>
             </div>
         </div>
 
