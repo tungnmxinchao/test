@@ -109,27 +109,29 @@
                                 </thead>
                                 <tbody>
                                     <c:forEach var="u" items="${users}">
-                                        <tr>
-                                            <td>${u.userId}</td>
-                                            <td>${u.fullName}</td>
-                                            <td>${u.email}</td>
-                                            <td>${u.phoneNumber}</td>
-                                            <td>${u.address}</td>
-                                            <td>${u.role}</td>
-                                            <td>
-                                                <span class="status ${u.isActive ? 'active' : 'inactive'}">
-                                                    ${u.isActive ? 'Hoạt động' : 'Bị khóa'}
-                                                </span>
-                                            </td>
-                                            <td><fmt:formatDate value="${u.createDate}" pattern="dd/MM/yyyy"/></td>
-                                            <td class="actions">
-                                                <form action="${pageContext.request.contextPath}/manageUser" method="get" style="display:inline;">
-                                                    <input type="hidden" name="action" value="view">
-                                                    <input type="hidden" name="userId" value="${u.userId}">
-                                                    <button type="submit" class="btn btn-detail">Xem chi tiết</button>
-                                                </form>
-                                            </td>
-                                        </tr>
+                                        <c:if test="${u.role ne 'Admin'}">
+                                            <tr>
+                                                <td>${u.userId}</td>
+                                                <td>${u.fullName}</td>
+                                                <td>${u.email}</td>
+                                                <td>${u.phoneNumber}</td>
+                                                <td>${u.address}</td>
+                                                <td>${u.role}</td>
+                                                <td>
+                                                    <span class="status ${u.isActive ? 'active' : 'inactive'}">
+                                                        ${u.isActive ? 'Hoạt động' : 'Bị khóa'}
+                                                    </span>
+                                                </td>
+                                                <td><fmt:formatDate value="${u.createDate}" pattern="dd/MM/yyyy"/></td>
+                                                <td class="actions">
+                                                    <form action="${pageContext.request.contextPath}/manageUser" method="get" style="display:inline;">
+                                                        <input type="hidden" name="action" value="view">
+                                                        <input type="hidden" name="userId" value="${u.userId}">
+                                                        <button type="submit" class="btn btn-detail">Xem chi tiết</button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        </c:if>
                                     </c:forEach>
                                 </tbody>
                             </table>

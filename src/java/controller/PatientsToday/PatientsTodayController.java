@@ -5,7 +5,9 @@
 package controller.PatientsToday;
 
 import dal.AppointmentsDao;
+import dal.MedicalRecordDao;
 import dto.AppointmentDto;
+import dto.MedicalRecordDto;
 import java.io.IOException;
 import java.io.PrintWriter;
 import jakarta.servlet.ServletException;
@@ -17,6 +19,7 @@ import java.sql.Date;
 import java.time.LocalDate;
 import java.util.List;
 import model.Appointments;
+import model.MedicalRecords;
 
 /**
  *
@@ -97,25 +100,55 @@ public class PatientsTodayController extends HttpServlet {
                 Appointments a = appointmentsDAO.getAppointmentsById(appointmentId);
 
                 if (a != null) {
-                    // 2. Set status mới
-                    a.setStatus("Completed");
+                    // Kiểm tra MedicalRecord
+                    MedicalRecordDto dto = new MedicalRecordDto();
+                    dto.setAppointmentId(appointmentId);
+                    dto.setPaginationMode(false);
+                    
+                    MedicalRecordDao medicalRecordDAO = new MedicalRecordDao();
+                    List<MedicalRecords> records = medicalRecordDAO.filterMedicalRecord(dto);
 
-                    // 3. Cập nhật
+                    if (records.isEmpty()) {
+                        // Nếu chưa có MedicalRecord → chuyển thẳng sang error.jsp
+                        request.setAttribute("errorMessage",
+                                "Chỉ hoàn thành khi bác sĩ chuẩn đoán bệnh ở phần kê đơn thuốc.");
+                        request.getRequestDispatcher("/error.jsp").forward(request, response);
+                        return;
+                    }
+
+                    // Nếu có MedicalRecord → hoàn tất
+                    a.setStatus("Completed");
                     boolean updated = appointmentsDAO.updateAppointment(a);
 
                     if (updated) {
-                        request.getSession().setAttribute("successMessage", "Hoàn thành lịch hẹn thành công.");
+                        request.setAttribute("successMessage", "Hoàn thành lịch hẹn thành công.");
                     } else {
-                        request.getSession().setAttribute("errorMessage", "Cập nhật thất bại.");
+                        request.setAttribute("errorMessage", "Cập nhật thất bại.");
                     }
+
+                    // Chuyển thẳng sang page hiển thị kết quả
+                    request.getRequestDispatcher("/patientsToday.jsp").forward(request, response);
+                    return;
+
                 } else {
-                    request.getSession().setAttribute("errorMessage", "Không tìm thấy lịch hẹn.");
+                    request.setAttribute("errorMessage", "Không tìm thấy lịch hẹn.");
+                    request.getRequestDispatcher("/error.jsp").forward(request, response);
+                    return;
                 }
+
             } catch (NumberFormatException ex) {
-                request.getSession().setAttribute("errorMessage", "ID lịch hẹn không hợp lệ.");
+                request.setAttribute("errorMessage", "ID lịch hẹn không hợp lệ.");
+                request.getRequestDispatcher("/error.jsp").forward(request, response);
+                return;
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                request.setAttribute("errorMessage", "Có lỗi khi hoàn tất lịch hẹn.");
+                request.getRequestDispatcher("/error.jsp").forward(request, response);
+                return;
             }
         }
 
+        // Nếu action khác hoặc không có appointmentId → quay về danh sách
         response.sendRedirect(request.getContextPath() + "/patientsToday");
 
     }

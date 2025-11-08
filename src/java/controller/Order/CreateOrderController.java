@@ -115,42 +115,32 @@ public class CreateOrderController extends HttpServlet {
             String[] medIds = request.getParameterValues("medicationId");
             String[] quantities = request.getParameterValues("quantity");
 
-            if (medIds == null || quantities == null || medIds.length != quantities.length) {
-                request.setAttribute("error", "Dữ liệu thuốc không hợp lệ.");
-                request.getRequestDispatcher("error.jsp").forward(request, response);
-                return;
-            }
-
-            BigDecimal totalAmount = BigDecimal.ZERO;
             List<OrderDetails> orderDetailsList = new ArrayList<>();
+            BigDecimal totalAmount = BigDecimal.ZERO;
 
-            // Tính tổng tiền thuốc
-            for (int i = 0; i < medIds.length; i++) {
-                int medId = Integer.parseInt(medIds[i]);
-                int qty = Integer.parseInt(quantities[i]);
-                if (qty <= 0) {
-                    continue;
+            // Nếu có thuốc thì tính tiền & tạo OrderDetails
+            if (medIds != null && quantities != null && medIds.length == quantities.length) {
+                for (int i = 0; i < medIds.length; i++) {
+                    int medId = Integer.parseInt(medIds[i]);
+                    int qty = Integer.parseInt(quantities[i]);
+                    if (qty <= 0) {
+                        continue;
+                    }
+
+                    Medications med = medicationDao.getMedicationById(medId);
+                    if (med == null) {
+                        continue;
+                    }
+
+                    BigDecimal lineTotal = med.getPrice().multiply(BigDecimal.valueOf(qty));
+                    totalAmount = totalAmount.add(lineTotal);
+
+                    OrderDetails detail = new OrderDetails();
+                    detail.setMedicationId(med);
+                    detail.setQuantity(qty);
+                    detail.setPrice(med.getPrice());
+                    orderDetailsList.add(detail);
                 }
-
-                Medications med = medicationDao.getMedicationById(medId);
-                if (med == null) {
-                    continue;
-                }
-
-                BigDecimal lineTotal = med.getPrice().multiply(BigDecimal.valueOf(qty));
-                totalAmount = totalAmount.add(lineTotal);
-
-                OrderDetails detail = new OrderDetails();
-                detail.setMedicationId(med);
-                detail.setQuantity(qty);
-                detail.setPrice(med.getPrice());
-                orderDetailsList.add(detail);
-            }
-
-            if (orderDetailsList.isEmpty()) {
-                request.setAttribute("error", "Chưa chọn thuốc để tạo đơn.");
-                request.getRequestDispatcher("error.jsp").forward(request, response);
-                return;
             }
 
             // Lấy phí khám bác sĩ
@@ -160,29 +150,32 @@ public class CreateOrderController extends HttpServlet {
                 totalAmount = totalAmount.add(doctor.getConsultationFee());
             }
 
-            // Lấy Prescription từ hồ sơ 
+            // Lấy Prescription từ hồ sơ, nếu có
             PrescriptionDto presDto = new PrescriptionDto();
             presDto.setAppointmentId(appointment.getAppointmentId());
             presDto.setPaginationMode(false);
             List<Prescriptions> presList = prescriptionDao.filterPrescription(presDto);
             Prescriptions prescription = presList.isEmpty() ? null : presList.get(0);
 
-            // Tạo order
+            // Tạo Orders
             Orders order = new Orders();
             Patients patient = new Patients();
             patient.setPatientID(patientId);
             order.setPatients(patient);
+
             if (prescription != null) {
-                order.setPrescriptions(prescription); // gắn Prescription
+                order.setPrescriptions(prescription);
             }
 
-            order.setOrderDate(new Timestamp(System.currentTimeMillis()));
+            order.setOrderDate(new java.sql.Timestamp(System.currentTimeMillis()));
             order.setTotalAmount(totalAmount);
             order.setStatus("Pending");
             order.setPaymentMethod("Cash");
             order.setPaymentStatus("Unpaid");
 
+            // Insert order kèm details nếu có, hoặc chỉ order nếu danh sách rỗng
             int orderId = orderDao.insertOrderWithDetails(order, orderDetailsList);
+
             if (orderId <= 0) {
                 request.setAttribute("error", "Không thể tạo order.");
                 request.getRequestDispatcher("error.jsp").forward(request, response);

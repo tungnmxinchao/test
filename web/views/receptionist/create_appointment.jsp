@@ -33,6 +33,34 @@
 
                 <!-- Form đặt lịch -->
                 <div class="form-container">
+                    <c:if test="${not empty selectedDoctorId}">
+                        <div class="week-navigation">
+                            <form action="bookAppointmentsDirectly" method="get" style="display:inline;">
+                                <input type="hidden" name="patientId" value="${param.patientId}" />
+                                <input type="hidden" name="serviceId" value="${selectedServiceId}" />
+                                <input type="hidden" name="doctorId" value="${selectedDoctorId}" />
+                                <input type="hidden" name="weekOffset" value="${weekOffset - 1}" />
+                                <button type="submit" class="btn btn-secondary">← Tuần trước</button>
+                            </form>
+
+                            <form action="bookAppointmentsDirectly" method="get" style="display:inline;">
+                                <input type="hidden" name="patientId" value="${param.patientId}" />
+                                <input type="hidden" name="serviceId" value="${selectedServiceId}" />
+                                <input type="hidden" name="doctorId" value="${selectedDoctorId}" />
+                                <input type="hidden" name="weekOffset" value="0" />
+                                <button type="submit" class="btn btn-primary">Tuần hiện tại</button>
+                            </form>
+
+                            <form action="bookAppointmentsDirectly" method="get" style="display:inline;">
+                                <input type="hidden" name="patientId" value="${param.patientId}" />
+                                <input type="hidden" name="serviceId" value="${selectedServiceId}" />
+                                <input type="hidden" name="doctorId" value="${selectedDoctorId}" />
+                                <input type="hidden" name="weekOffset" value="${weekOffset + 1}" />
+                                <button type="submit" class="btn btn-secondary">Tuần sau →</button>
+                            </form>
+                        </div>
+                    </c:if>
+
                     <form id="bookingForm" action="bookAppointmentsDirectly" method="post">
 
                         <!-- Bệnh nhân -->

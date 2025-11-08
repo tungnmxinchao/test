@@ -40,7 +40,7 @@ public class ResigterController extends HttpServlet {
         user.setPhoneNumber(request.getParameter("phone"));
         user.setGender(request.getParameter("gender"));
         user.setAddress(request.getParameter("address") != null ? request.getParameter("address") : "");
-        user.setRole("patient");
+        user.setRole("Patient");
         user.setIsActive(true);
         
         int result = userDao.insertUser(user);

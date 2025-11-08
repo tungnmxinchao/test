@@ -4,19 +4,39 @@
     Author     : TNO
 --%>
 
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <div class="sidebar">
     <h2>Quản lý</h2>
-    <a href="${pageContext.request.contextPath}/lookUpAppointments" class="active">Tra cứu lịch hẹn</a>
-    <a href="${pageContext.request.contextPath}/patientsToday">Bệnh nhân hôm nay</a>
-    <a href="${pageContext.request.contextPath}/bookAppointmentsDirectly">Đặt lịch trực tiếp</a>
-    <a href="${pageContext.request.contextPath}/manageSchedule">Quản lý lịch bác sĩ</a>
-    <a href="${pageContext.request.contextPath}/manageUser">Quản lý người dùng</a>
-    <a href="${pageContext.request.contextPath}/manageService">Quản lý dịch vụ</a>
-    <a href="${pageContext.request.contextPath}/manageMedications">Quản lý thuốc</a>
-    <a href="${pageContext.request.contextPath}/manageOrder">Quản lý đơn hàng</a>
-    <a href="${pageContext.request.contextPath}/report">Thống kê</a>
+    <c:choose>
+        <c:when test="${user.role == 'Admin'}">
+            <!-- Admin toàn quyền -->
+            <a href="${pageContext.request.contextPath}/lookUpAppointments">Tra cứu lịch hẹn</a>
+            <a href="${pageContext.request.contextPath}/patientsToday">Bệnh nhân hôm nay</a>
+            <a href="${pageContext.request.contextPath}/bookAppointmentsDirectly">Đặt lịch trực tiếp</a>
+            <a href="${pageContext.request.contextPath}/manageSchedule">Quản lý lịch bác sĩ</a>
+            <a href="${pageContext.request.contextPath}/manageUser">Quản lý người dùng</a>
+            <a href="${pageContext.request.contextPath}/manageService">Quản lý dịch vụ</a>
+            <a href="${pageContext.request.contextPath}/manageMedications">Quản lý thuốc</a>
+            <a href="${pageContext.request.contextPath}/manageOrder">Quản lý đơn hàng</a>
+            <a href="${pageContext.request.contextPath}/report">Thống kê</a>
+        </c:when>
 
+        <c:when test="${user.role == 'Doctor'}">
+            <!-- Doctor -->
+            <a href="${pageContext.request.contextPath}/patientsToday">Bệnh nhân hôm nay</a>
+            <a href="${pageContext.request.contextPath}/manageMedications">Quản lý thuốc</a>
+            <a href="${pageContext.request.contextPath}/manageService">Quản lý dịch vụ</a>
+        </c:when>
+
+        <c:when test="${user.role == 'Receptionist'}">
+            <!-- Receptionist -->
+            <a href="${pageContext.request.contextPath}/lookUpAppointments">Tra cứu lịch hẹn</a>
+            <a href="${pageContext.request.contextPath}/bookAppointmentsDirectly">Đặt lịch trực tiếp</a>
+            <a href="${pageContext.request.contextPath}/manageService">Quản lý dịch vụ</a>
+            <a href="${pageContext.request.contextPath}/manageOrder">Quản lý đơn hàng</a>
+        </c:when>
+    </c:choose>
     <a href="${pageContext.request.contextPath}/logout">Đăng xuất</a>
 </div>
 

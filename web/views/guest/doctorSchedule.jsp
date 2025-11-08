@@ -36,6 +36,10 @@
 
                 <div class="week-nav" style="display:flex; gap:8px; margin:8px 0;">
                     <a class="btn"
+                       href="${pageContext.request.contextPath}/doctorWorkSchedule?doctorId=${doctorId}&serviceId=${serviceId}&weekOffset=${weekOffset - 1}">
+                        ⟵ Tuần trước
+                    </a>
+                    <a class="btn"
                        href="${pageContext.request.contextPath}/doctorWorkSchedule?doctorId=${doctorId}&serviceId=${serviceId}&weekOffset=0">
                         Tuần này
                     </a>

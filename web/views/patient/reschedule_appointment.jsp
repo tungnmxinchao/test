@@ -138,6 +138,11 @@
             <div class="page-header">
                 <h1>Thay đổi lịch hẹn</h1>
                 <div class="week-nav">
+                    <!-- Tuần trước -->
+                    <a class="btn btn-ghost"
+                       href="${pageContext.request.contextPath}/loadRescheduleAppointment?appointmentId=${appointment.appointmentId}&weekOffset=${weekOffset - 1}">
+                        ⟵ Tuần trước
+                    </a>
                     <a class="btn btn-ghost"
                        href="${pageContext.request.contextPath}/loadRescheduleAppointment?appointmentId=${appointment.appointmentId}&weekOffset=0">
                         Tuần hiện tại

@@ -123,10 +123,23 @@
                     <form action="${pageContext.request.contextPath}/manageUser" method="post" class="status-form">
                         <input type="hidden" name="action" value="updateStatus">
                         <input type="hidden" name="userId" value="${user.userId}">
-                        <input type="hidden" name="isActive" value="${not user.isActive}">
-                        <button type="submit" class="${user.isActive ? 'btn-lock' : 'btn-active'}">
-                            ${user.isActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
-                        </button>
+
+                        <div class="info-group">
+                            <span class="info-label">Vai trò:</span>
+                            <select name="role" onchange="this.form.submit()">
+                                <option value="Doctor" ${user.role == 'Doctor' ? 'selected' : ''}>Bác sĩ</option>
+                                <option value="Receptionist" ${user.role == 'Receptionist' ? 'selected' : ''}>Lễ tân</option>
+                                <option value="Patient" ${user.role == 'Patient' ? 'selected' : ''}>Bệnh nhân</option>
+                            </select>
+                        </div>
+
+                        <div class="info-group">
+                            <span class="info-label">Trạng thái:</span>
+                            <select name="isActive" onchange="this.form.submit()">
+                                <option value="true" ${user.isActive ? 'selected' : ''}>Hoạt động</option>
+                                <option value="false" ${not user.isActive ? 'selected' : ''}>Bị khóa</option>
+                            </select>
+                        </div>
                     </form>
 
                     <!-- Nếu là bệnh nhân -->

@@ -60,10 +60,14 @@ public class ManageUserController extends HttpServlet {
         if ("updateStatus".equalsIgnoreCase(action)) {
             int userId = Integer.parseInt(request.getParameter("userId"));
             boolean isActive = Boolean.parseBoolean(request.getParameter("isActive"));
+            String role = request.getParameter("role");
 
             Users user = usersDao.getUserById(userId);
             if (user != null) {
                 user.setIsActive(isActive);
+                if (role != null && !role.isBlank()) {
+                    user.setRole(role);
+                }
                 usersDao.updateUser(user);
             }
 
@@ -81,7 +85,7 @@ public class ManageUserController extends HttpServlet {
             throws ServletException, IOException {
 
         // === Lấy filter từ request ===
-            String fullName = request.getParameter("fullName");
+        String fullName = request.getParameter("fullName");
         String phone = request.getParameter("phoneNumber");
         String address = request.getParameter("address");
         String isActiveStr = request.getParameter("isActive");
@@ -122,7 +126,7 @@ public class ManageUserController extends HttpServlet {
         request.setAttribute("page", page);
         request.setAttribute("size", size);
         request.setAttribute("totalPages", totalPages);
-        request.setAttribute("baseUrl","manageUser?action=list");
+        request.setAttribute("baseUrl", "manageUser?action=list");
 
         // Chuyển tới JSP
         request.getRequestDispatcher("/views/admin/manageUser.jsp").forward(request, response);

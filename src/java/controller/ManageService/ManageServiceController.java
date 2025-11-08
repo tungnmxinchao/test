@@ -14,11 +14,13 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.Part;
 import java.math.BigDecimal;
 import java.util.List;
 import model.Service;
 import model.Users;
+import utils.SessionUtils;
 import utils.UploadUtils;
 
 /**
@@ -26,7 +28,7 @@ import utils.UploadUtils;
  * @author TNO
  */
 @WebServlet(name = "ManageServiceController", urlPatterns = {"/manageService"})
-@MultipartConfig( 
+@MultipartConfig(
         fileSizeThreshold = 1024 * 1024, // 1MB: bộ nhớ tạm trước khi ghi ra đĩa
         maxFileSize = 1024 * 1024 * 5, // 5MB: kích thước tối đa file
         maxRequestSize = 1024 * 1024 * 20 // 20MB: tổng dung lượng tối đa của request
@@ -160,12 +162,22 @@ public class ManageServiceController extends HttpServlet {
         String imageName = UploadUtils.uploadImage(imagePart, uploadPath);
         service.setImage(imageName);
 
-        // Lấy người tạo (giả định đang đăng nhập)
+        HttpSession session = request.getSession(false);
+        int userId = SessionUtils.getUserId(session);
+
+        if (userId == -1) {
+            // Nếu chưa đăng nhập → quay lại login
+            response.sendRedirect("login");
+            return;
+        }
+
         Users creator = new Users();
-        creator.setUserId(1); // tạm hardcode
+        creator.setUserId(userId);
         service.setCreatedBy(creator);
 
         serviceDao.insertService(service);
+
+        // ✅ Chuyển hướng về trang danh sách dịch vụ
         response.sendRedirect("manageService?action=view");
     }
 

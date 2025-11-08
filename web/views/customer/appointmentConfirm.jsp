@@ -33,9 +33,9 @@
             <c:if test="${patient == null}">
                 <div class="confirm-card" style="border-color:#ffe0e0;">
                     <p style="color:#b30000;">
-                        Bạn cần đăng nhập và cập nhật hồ sơ khám.
+                        Bạn cập nhật hồ sơ khám.
                     </p>
-                    <a class="btn btn-primary" href="${pageContext.request.contextPath}/login">Đăng nhập</a>
+                    <a class="btn btn-primary" href="${pageContext.request.contextPath}/profile">Cập nhật</a>
                 </div>
             </c:if>
 
